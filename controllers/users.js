@@ -13,8 +13,10 @@ const {
   TOKEN_ERROR_MSG,
   USER_NOT_FOUND_ERROR_MSG,
   UNAUTHORIZED_ERROR_MSG,
+  WRONG_PASSWORD_ERROR_MSG,
   SUCCESSFUL_LOGOUT_MSG,
-  SUCCESSFUL_PROFILE_UPDATE_MSG,
+  SUCCESSFUL_EMAIL_UPDATE_MSG,
+  SUCCESSFUL_PASSWORD_UPDATE_MSG,
   CONFLICT_UPDATE_EMAIL_ERROR_MSG,
 } = require('../utils/constants');
 
@@ -124,7 +126,7 @@ const updateUserEmail = (req, res, next) => {
       if (!user) {
         return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
       }
-      return res.status(200).send({ user, message: SUCCESSFUL_PROFILE_UPDATE_MSG });
+      return res.status(200).send({ user, message: SUCCESSFUL_EMAIL_UPDATE_MSG });
     })
     .catch((err) => {
       if (err.name === 'MongoServerError' || err.code === 11000) {
@@ -137,10 +139,33 @@ const updateUserEmail = (req, res, next) => {
     });
 };
 
+const updatePassword = (req, res, next) => {
+  const { email, oldPassword, newPassword } = req.body;
+  User.findOne({ email }).select('+password')
+    .then((user) => {
+      if (!user) {
+        return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
+      }
+      return bcrypt.compare(oldPassword, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw new UnauthorizedError(WRONG_PASSWORD_ERROR_MSG);
+          }
+          bcrypt.hash(newPassword, 10)
+            .then((hash) => {
+              user.updateOne({ password: hash }, { new: true, runValidators: true })
+                .then(() => res.status(200).send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG }));
+            });
+        });
+    })
+    .catch(next);
+};
+
 module.exports = {
   createUser,
   login,
   logout,
   getMe,
   updateUserEmail,
+  updatePassword,
 };

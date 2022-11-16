@@ -21,9 +21,7 @@ const deletePhoto = (req, res, next) => {
         return next(new ForbiddenError(FORBIDDEN_ERROR_MSG));
       }
       return photo.remove()
-        .tnen((deletedPhoto) => {
-          res.status(200).send({ data: deletedPhoto, message: SUCCESSFUL_PHOTO_DELETE_MSG });
-        });
+        .tnen(() => res.status(200).send({ message: SUCCESSFUL_PHOTO_DELETE_MSG }));
     })
     .catch(next);
 };
