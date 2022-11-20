@@ -23,6 +23,7 @@
     "helmet": "^6.0.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.4.4",
+    "nodemailer": "^6.8.0",
     "validator": "^13.7.0",
     "winston": "^3.8.1"
   },

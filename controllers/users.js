@@ -1,6 +1,13 @@
+const {
+  JWT_SECRET,
+  JWT_RESET_PASSWORD,
+  JWT_UPDATE_EMAIL,
+  NODEMAILER_USER,
+} = process.env;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../utils/config');
+const transporter = require('../utils/nodemailerTransporter');
+const { resetPasswordEmailMarkup, successfullPasswordUpdateEmailMarkup, emailConfirmationEmailMarkup } = require('../utils/emailHtmlMarkup');
 const NotFoundError = require('../errors/not-found-err');
 const ConflictError = require('../errors/conflict-err');
 const BadRequestError = require('../errors/bad-request-err');
@@ -14,10 +21,20 @@ const {
   USER_NOT_FOUND_ERROR_MSG,
   UNAUTHORIZED_ERROR_MSG,
   WRONG_PASSWORD_ERROR_MSG,
+  AUTHENTICATION_ERROR_MSG,
+  RESET_TOKEN_ERROR_MSG,
+  NO_RESET_TOKEN_ERROR_MSG,
   SUCCESSFUL_LOGOUT_MSG,
   SUCCESSFUL_EMAIL_UPDATE_MSG,
   SUCCESSFUL_PASSWORD_UPDATE_MSG,
   CONFLICT_UPDATE_EMAIL_ERROR_MSG,
+  EMAIL_SENT_SUCCESSFULLY_MSG,
+  REQUEST_UPDATE_EMAIL_SUBJECT,
+  REQUEST_UPDATE_EMAIL_TEXT,
+  FORGOT_PASSWORD_SUBJECT,
+  FORGOT_PASSWORD_TEXT,
+  RESET_PASSWORD_SUBJECT,
+  RESET_PASSWORD_TEXT,
 } = require('../utils/constants');
 
 const User = require('../models/user');
@@ -118,25 +135,61 @@ const getMe = (req, res, next) => {
     .catch(next);
 };
 
-const updateUserEmail = (req, res, next) => {
-  const userId = req.user._id;
+const requestEmailUpdate = (req, res, next) => {
   const { email } = req.body;
-  User.findByIdAndUpdate(userId, { email }, { new: true, runValidators: true })
+  User.findById(req.user._id)
     .then((user) => {
       if (!user) {
-        return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
+        next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
       }
-      return res.status(200).send({ user, message: SUCCESSFUL_EMAIL_UPDATE_MSG });
-    })
-    .catch((err) => {
-      if (err.name === 'MongoServerError' || err.code === 11000) {
-        return next(new ConflictError(CONFLICT_UPDATE_EMAIL_ERROR_MSG));
-      }
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        return next(new BadRequestError(BAD_REQUEST_ERROR_MSG));
-      }
-      return next(err);
+      const token = jwt.sign(
+        { _id: user._id },
+        JWT_UPDATE_EMAIL,
+        { expiresIn: '20m' },
+      );
+      const data = {
+        from: NODEMAILER_USER,
+        to: email,
+        subject: REQUEST_UPDATE_EMAIL_SUBJECT,
+        text: REQUEST_UPDATE_EMAIL_TEXT,
+        html: emailConfirmationEmailMarkup(token),
+      };
+      user.updateOne({ updateEmailLink: token })
+        .then(() => {
+          transporter.sendMail(data);
+          res.status(200).send({ message: 'E-mail has been sent, please follow the instructions.' });
+        });
     });
+};
+
+const updateEmail = (req, res, next) => {
+  const userId = req.user._id;
+  const { newEmail } = req.body;
+  const { updateEmailLink } = req.params;
+  if (!updateEmailLink) {
+    next(new UnauthorizedError(AUTHENTICATION_ERROR_MSG));
+  }
+  jwt.verify(updateEmailLink, JWT_UPDATE_EMAIL, (error) => {
+    if (error) {
+      next(new UnauthorizedError(RESET_TOKEN_ERROR_MSG));
+    }
+    User.findByIdAndUpdate(userId, { email: newEmail, updateEmailLink: '' }, { new: true, runValidators: true })
+      .then((user) => {
+        if (!user) {
+          return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
+        }
+        return res.status(200).send({ message: SUCCESSFUL_EMAIL_UPDATE_MSG });
+      })
+      .catch((err) => {
+        if (err.name === 'MongoServerError' || err.code === 11000) {
+          return next(new ConflictError(CONFLICT_UPDATE_EMAIL_ERROR_MSG));
+        }
+        if (err.name === 'ValidationError' || err.name === 'CastError') {
+          return next(new BadRequestError(BAD_REQUEST_ERROR_MSG));
+        }
+        return next(err);
+      });
+  });
 };
 
 const updatePassword = (req, res, next) => {
@@ -161,11 +214,78 @@ const updatePassword = (req, res, next) => {
     .catch(next);
 };
 
+const forgotPassword = (req, res, next) => {
+  const { email } = req.body;
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
+      }
+      const token = jwt.sign(
+        { _id: user._id },
+        JWT_RESET_PASSWORD,
+        { expiresIn: '20m' },
+      );
+      const data = {
+        from: NODEMAILER_USER,
+        to: email,
+        subject: FORGOT_PASSWORD_SUBJECT,
+        text: FORGOT_PASSWORD_TEXT,
+        html: resetPasswordEmailMarkup(token),
+      };
+      user.updateOne({ resetPasswordLink: token })
+        .then(() => {
+          transporter.sendMail(data);
+          res.status(200).send({ message: EMAIL_SENT_SUCCESSFULLY_MSG });
+        });
+    })
+    .catch(next);
+};
+
+const resetPassword = (req, res, next) => {
+  const { newPassword } = req.body;
+  const { resetPasswordLink } = req.params;
+  if (!resetPasswordLink) {
+    next(new UnauthorizedError(AUTHENTICATION_ERROR_MSG));
+  }
+  // eslint-disable-next-line no-unused-vars
+  jwt.verify(resetPasswordLink, JWT_RESET_PASSWORD, (err, decoded) => {
+    if (err) {
+      return next(new UnauthorizedError(RESET_TOKEN_ERROR_MSG));
+    }
+    return User.findOne({ resetPasswordLink })
+      .then((user) => {
+        if (!user) {
+          next(new NotFoundError(NO_RESET_TOKEN_ERROR_MSG));
+        }
+        bcrypt.hash(newPassword, 10)
+          .then((hash) => {
+            user.updateOne({ password: hash, resetPasswordLink: '' }, { new: true, runValidators: true })
+              .then(() => {
+                const data = {
+                  from: NODEMAILER_USER,
+                  to: user.email,
+                  subject: RESET_PASSWORD_SUBJECT,
+                  text: RESET_PASSWORD_TEXT,
+                  html: successfullPasswordUpdateEmailMarkup,
+                };
+                transporter.sendMail(data);
+                res.status(200).send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG });
+              });
+          });
+      });
+  })
+    .catch(next);
+};
+
 module.exports = {
   createUser,
   login,
   logout,
   getMe,
-  updateUserEmail,
+  requestEmailUpdate,
+  updateEmail,
   updatePassword,
+  forgotPassword,
+  resetPassword,
 };

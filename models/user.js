@@ -19,6 +19,14 @@ const userSchema = new mongoose.Schema({
     required: true,
     select: false,
   },
+  resetPasswordLink: {
+    data: String,
+    default: '',
+  },
+  updateEmailLink: {
+    data: String,
+    default: '',
+  },
 });
 
 userSchema.statics.findUserByCredentials = function findUser(email, password) {
