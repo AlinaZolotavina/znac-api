@@ -6,7 +6,7 @@ const { PHOTO_NOT_FOUND_ERROR_MSG, FORBIDDEN_ERROR_MSG, SUCCESSFUL_PHOTO_DELETE_
 
 const getPhotos = (req, res, next) => {
   Photo.find({})
-    .then((movies) => res.status(200).send(movies))
+    .then((photos) => res.status(200).send(photos))
     .catch(next);
 };
 

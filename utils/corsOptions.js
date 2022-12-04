@@ -1,7 +1,7 @@
 const corsOptions = {
   origin: [
-    // 'https://movieexplorer.nomoredomains.sbs',
-    // 'http://movieexplorer.nomoredomains.sbs',
+    'https://znac.org',
+    'http://znac.org',
     'http://localhost:3000',
   ],
   credentials: true,

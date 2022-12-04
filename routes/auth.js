@@ -10,7 +10,7 @@ const {
 
 router.post('/signup', validateSignupOrSignin, createUser);
 router.post('/signin', validateSignupOrSignin, login);
-router.post('/signout', logout);
+router.delete('/signout', logout);
 router.put('/forgot-password', forgotPassword);
 router.put('/reset-password/:resetPasswordLink', resetPassword);
 
