@@ -33,6 +33,7 @@ const {
   REQUEST_UPDATE_EMAIL_TEXT,
   FORGOT_PASSWORD_SUBJECT,
   FORGOT_PASSWORD_TEXT,
+  NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG,
   RESET_PASSWORD_SUBJECT,
   RESET_PASSWORD_TEXT,
 } = require('../utils/constants');
@@ -250,7 +251,7 @@ const resetPassword = (req, res, next) => {
   if (!resetPasswordLink) {
     next(new UnauthorizedError(AUTHENTICATION_ERROR_MSG));
   }
-  if (newPassword === confirmPassword) {
+  if (newPassword !== confirmPassword) {
     next(new BadRequestError('Введенные пароли не совпадают'));
   }
   // eslint-disable-next-line no-unused-vars
@@ -263,20 +264,27 @@ const resetPassword = (req, res, next) => {
         if (!user) {
           next(new NotFoundError(NO_RESET_TOKEN_ERROR_MSG));
         }
-        bcrypt.hash(newPassword, 10)
-          .then((hash) => {
-            user.updateOne({ password: hash, resetPasswordLink: '' }, { new: true, runValidators: true })
-              .then(() => {
-                const data = {
-                  from: NODEMAILER_USER,
-                  to: user.email,
-                  subject: RESET_PASSWORD_SUBJECT,
-                  text: RESET_PASSWORD_TEXT,
-                  html: successfullPasswordUpdateEmailMarkup,
-                };
-                transporter.sendMail(data);
-                res.status(200).send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG });
-              });
+        bcrypt.compare(newPassword, user.password)
+          .then((matched) => {
+            if (matched) {
+              next(new ConflictError(NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG));
+            } else {
+              bcrypt.hash(newPassword, 10)
+                .then((hash) => {
+                  user.updateOne({ password: hash, resetPasswordLink: '' }, { new: true, runValidators: true })
+                    .then(() => {
+                      const data = {
+                        from: NODEMAILER_USER,
+                        to: user.email,
+                        subject: RESET_PASSWORD_SUBJECT,
+                        text: RESET_PASSWORD_TEXT,
+                        html: successfullPasswordUpdateEmailMarkup,
+                      };
+                      transporter.sendMail(data);
+                      res.status(200).send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG });
+                    });
+                });
+            }
           });
       });
   })

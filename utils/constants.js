@@ -28,6 +28,7 @@ const REQUEST_UPDATE_EMAIL_SUBJECT = 'Confirm your e-mail';
 const REQUEST_UPDATE_EMAIL_TEXT = 'We got a request to change your e-mail.';
 const FORGOT_PASSWORD_SUBJECT = 'Reset your password';
 const FORGOT_PASSWORD_TEXT = 'We got a request to reset your password.';
+const NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG = 'The new password is the same as the previous one';
 const RESET_PASSWORD_SUBJECT = 'Your password has been changed';
 const RESET_PASSWORD_TEXT = 'Your password has been changed';
 
@@ -60,6 +61,7 @@ module.exports = {
   REQUEST_UPDATE_EMAIL_TEXT,
   FORGOT_PASSWORD_SUBJECT,
   FORGOT_PASSWORD_TEXT,
+  NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG,
   RESET_PASSWORD_SUBJECT,
   RESET_PASSWORD_TEXT,
 };
