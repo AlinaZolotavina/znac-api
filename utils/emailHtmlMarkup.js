@@ -15,7 +15,7 @@ const resetPasswordEmailMarkup = (token) => `
     <tr style="width: 150px; height: 50px;">
       <td>
         <a style="width: 80%; background-color: #4990A8; padding: 10px 50px; margin: 0 32px; color: #fff; font-size: 14px; line-height: 17px; font-weight: 300; text-align: center; text-decoration: none; border-radius: 5px;"
-        href="http://localhost:3000/profile/reset-password/${token}">Reset</a>
+        href="http://localhost:3000/reset-password/${token}">Reset</a>
       </td>
     </tr>
     <tr style="height: 51; margin: 30px auto;">

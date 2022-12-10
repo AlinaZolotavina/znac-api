@@ -245,10 +245,13 @@ const forgotPassword = (req, res, next) => {
 };
 
 const resetPassword = (req, res, next) => {
-  const { newPassword } = req.body;
+  const { newPassword, confirmPassword } = req.body;
   const { resetPasswordLink } = req.params;
   if (!resetPasswordLink) {
     next(new UnauthorizedError(AUTHENTICATION_ERROR_MSG));
+  }
+  if (newPassword === confirmPassword) {
+    next(new BadRequestError('Введенные пароли не совпадают'));
   }
   // eslint-disable-next-line no-unused-vars
   jwt.verify(resetPasswordLink, JWT_RESET_PASSWORD, (err, decoded) => {
