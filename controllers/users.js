@@ -251,7 +251,7 @@ const resetPassword = (req, res, next) => {
   if (!resetPasswordLink) {
     next(new UnauthorizedError(AUTHENTICATION_ERROR_MSG));
   }
-  if (newPassword !== confirmPassword) {
+  if (newPassword.toString() !== confirmPassword.toString()) {
     next(new BadRequestError('Введенные пароли не совпадают'));
   }
   // eslint-disable-next-line no-unused-vars
