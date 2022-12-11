@@ -259,7 +259,7 @@ const resetPassword = (req, res, next) => {
     if (err) {
       return next(new UnauthorizedError(RESET_TOKEN_ERROR_MSG));
     }
-    return User.findOne({ resetPasswordLink })
+    return User.findOne({ resetPasswordLink }).select('+password')
       .then((user) => {
         if (!user) {
           next(new NotFoundError(NO_RESET_TOKEN_ERROR_MSG));
