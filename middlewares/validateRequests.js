@@ -31,7 +31,7 @@ const validateAddPhoto = celebrate({
   }),
 });
 
-const validateDeletePhoto = celebrate({
+const validatePhotoRequest = celebrate({
   params: Joi.object().keys({
     photoId: Joi.string().required().alphanum().length(24)
       .hex(),
@@ -42,5 +42,5 @@ module.exports = {
   validateSignupOrSignin,
   validateUpdateUserEmail,
   validateAddPhoto,
-  validateDeletePhoto,
+  validatePhotoRequest,
 };

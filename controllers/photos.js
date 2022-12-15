@@ -33,8 +33,24 @@ const addPhoto = (req, res, next) => {
     .catch(next);
 };
 
+const increaseViews = (req, res, next) => {
+  const { photoId } = req.params;
+  let viewsCount;
+  Photo.findById(photoId)
+    .then((photo) => {
+      if (!photo) {
+        return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
+      }
+      viewsCount = photo.views + 1;
+      return photo.updateOne({ views: viewsCount })
+        .then(() => res.send(photo));
+    })
+    .catch(next);
+};
+
 module.exports = {
   getPhotos,
   deletePhoto,
   addPhoto,
+  increaseViews,
 };
