@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 const helmet = require('helmet');
-const cors = require('cors');
+// const cors = require('cors');
 // const corsOptions = require('./utils/corsOptions');
 const router = require('./routes');
 const errorHandler = require('./middlewares/errorHandler');
@@ -29,7 +29,9 @@ mongoose.connect(DB_URL, {
 });
 
 // app.use(cors(corsOptions));
-app.options(('*', cors()));
+// app.options(('*', (req, res) => {
+//   res.
+// }));
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');
   res.setHeader(
@@ -41,7 +43,11 @@ app.use((req, res, next) => {
     'GET, POST, PATCH, DELETE, OPTIONS',
   );
   res.setHeader('Access-Control-Allow-Credentials', true);
-  next();
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
 });
 
 app.use(requestLogger);
