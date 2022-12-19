@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 const Photo = require('../models/photo');
 const NotFoundError = require('../errors/not-found-err');
-const ForbiddenError = require('../errors/forbidden-err');
-const { PHOTO_NOT_FOUND_ERROR_MSG, FORBIDDEN_ERROR_MSG, SUCCESSFUL_PHOTO_DELETE_MSG } = require('../utils/constants');
+// const ForbiddenError = require('../errors/forbidden-err');
+const { PHOTO_NOT_FOUND_ERROR_MSG, SUCCESSFUL_PHOTO_DELETE_MSG } = require('../utils/constants');
 
 const getPhotos = (req, res, next) => {
   Photo.find({})
@@ -17,11 +17,13 @@ const deletePhoto = (req, res, next) => {
       if (!photo) {
         return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
       }
-      if (photo.owner._id.toString() !== req.user._id.toString()) {
-        return next(new ForbiddenError(FORBIDDEN_ERROR_MSG));
-      }
-      return photo.remove()
-        .tnen(() => res.status(200).send({ message: SUCCESSFUL_PHOTO_DELETE_MSG }));
+      // if (photo.owner._id.toString() !== req.user._id.toString()) {
+      //   return next(new ForbiddenError(FORBIDDEN_ERROR_MSG));
+      // }
+      return photo.remove();
+    })
+    .then(() => {
+      res.status(200).send({ message: SUCCESSFUL_PHOTO_DELETE_MSG });
     })
     .catch(next);
 };

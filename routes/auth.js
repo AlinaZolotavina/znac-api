@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { validateSignupOrSignin } = require('../middlewares/validateRequests');
+const { validateSignup, validateSignin } = require('../middlewares/validateRequests');
 const {
   createUser,
   login,
@@ -8,8 +8,8 @@ const {
   resetPassword,
 } = require('../controllers/users');
 
-router.post('/signup', validateSignupOrSignin, createUser);
-router.post('/signin', validateSignupOrSignin, login);
+router.post('/signup', validateSignup, createUser);
+router.post('/signin', validateSignin, login);
 router.delete('/signout', logout);
 router.put('/forgot-password', forgotPassword);
 router.put('/reset-password/:resetPasswordLink', resetPassword);

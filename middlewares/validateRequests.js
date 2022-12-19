@@ -10,7 +10,14 @@ const validateUrl = (url) => {
   return url;
 };
 
-const validateSignupOrSignin = celebrate({
+const validateSignup = celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).required(),
+  }),
+});
+
+const validateSignin = celebrate({
   body: Joi.object().keys({
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
@@ -39,7 +46,8 @@ const validatePhotoRequest = celebrate({
 });
 
 module.exports = {
-  validateSignupOrSignin,
+  validateSignup,
+  validateSignin,
   validateUpdateUserEmail,
   validateAddPhoto,
   validatePhotoRequest,
