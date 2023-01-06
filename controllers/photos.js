@@ -50,9 +50,23 @@ const increaseViews = (req, res, next) => {
     .catch(next);
 };
 
+const editHashtags = (req, res, next) => {
+  const { photoId } = req.params;
+  const { newHashtags } = req.body;
+  Photo.findByIdAndUpdate(photoId, { hashtags: newHashtags }, { new: true, runValidators: true })
+    .then((photo) => {
+      if (!photo) {
+        return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
+      }
+      return res.send(photo);
+    })
+    .catch(next);
+};
+
 module.exports = {
   getPhotos,
   deletePhoto,
   addPhoto,
   increaseViews,
+  editHashtags,
 };
