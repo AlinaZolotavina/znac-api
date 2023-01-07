@@ -5,8 +5,6 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 const helmet = require('helmet');
-// const cors = require('cors');
-// const corsOptions = require('./utils/corsOptions');
 const router = require('./routes');
 const errorHandler = require('./middlewares/errorHandler');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -28,12 +26,7 @@ mongoose.connect(DB_URL, {
   useNewUrlParser: true,
 });
 
-// app.use(cors(corsOptions));
-// app.options(('*', (req, res) => {
-//   res.
-// }));
 app.use((req, res, next) => {
-  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');
   res.setHeader(
     'Access-Control-Allow-Headers',
