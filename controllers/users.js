@@ -181,7 +181,7 @@ const updateEmail = (req, res, next) => {
         if (!user) {
           return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
         }
-        return res.status(200).send({ message: SUCCESSFUL_EMAIL_UPDATE_MSG });
+        return res.status(200).send({ message: SUCCESSFUL_EMAIL_UPDATE_MSG, user });
       })
       .catch((err) => {
         if (err.name === 'MongoServerError' || err.code === 11000) {
