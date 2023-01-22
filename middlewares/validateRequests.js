@@ -26,7 +26,7 @@ const validateSignin = celebrate({
 
 const validateUpdateUserEmail = celebrate({
   body: Joi.object().keys({
-    email: Joi.string().email().required(),
+    newEmail: Joi.string().email().required(),
   }),
 });
 

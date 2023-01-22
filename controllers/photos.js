@@ -1,12 +1,20 @@
 /* eslint-disable no-console */
 const Photo = require('../models/photo');
 const NotFoundError = require('../errors/not-found-err');
-// const ForbiddenError = require('../errors/forbidden-err');
 const { PHOTO_NOT_FOUND_ERROR_MSG, SUCCESSFUL_PHOTO_DELETE_MSG } = require('../utils/constants');
 
 const getPhotos = (req, res, next) => {
   Photo.find({})
     .then((photos) => res.status(200).send(photos))
+    .catch(next);
+};
+
+const findPhoto = (req, res, next) => {
+  const { keyWord } = req.body;
+  Photo.find({ hashtags: { $regex: keyWord } })
+    .then((photos) => {
+      res.send(photos);
+    })
     .catch(next);
 };
 
@@ -20,6 +28,7 @@ const deletePhoto = (req, res, next) => {
       // if (photo.owner._id.toString() !== req.user._id.toString()) {
       //   return next(new ForbiddenError(FORBIDDEN_ERROR_MSG));
       // }
+      console.log(photo);
       return photo.remove();
     })
     .then(() => {
@@ -65,6 +74,7 @@ const editHashtags = (req, res, next) => {
 
 module.exports = {
   getPhotos,
+  findPhoto,
   deletePhoto,
   addPhoto,
   increaseViews,

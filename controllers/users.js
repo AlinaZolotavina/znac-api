@@ -7,7 +7,12 @@ const {
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const transporter = require('../utils/nodemailerTransporter');
-const { resetPasswordEmailMarkup, successfullPasswordUpdateEmailMarkup, emailConfirmationEmailMarkup } = require('../utils/emailHtmlMarkup');
+const {
+  resetPasswordEmailMarkup,
+  successfullPasswordUpdateEmailMarkup,
+  emailConfirmationEmailMarkup,
+  warningOfChangingEmailMarkup,
+} = require('../utils/emailHtmlMarkup');
 const NotFoundError = require('../errors/not-found-err');
 const ConflictError = require('../errors/conflict-err');
 const BadRequestError = require('../errors/bad-request-err');
@@ -36,6 +41,8 @@ const {
   NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG,
   RESET_PASSWORD_SUBJECT,
   RESET_PASSWORD_TEXT,
+  WARNING_UPDATE_EMAIL_SUBJECT,
+  WARNING_UPDATE_EMAIL_TEXT,
 } = require('../utils/constants');
 
 const User = require('../models/user');
@@ -139,7 +146,10 @@ const getMe = (req, res, next) => {
 };
 
 const requestEmailUpdate = (req, res, next) => {
-  const { email } = req.body;
+  const { newEmail, oldEmail } = req.body;
+  if (newEmail === oldEmail) {
+    next(new ConflictError(CONFLICT_UPDATE_EMAIL_ERROR_MSG));
+  }
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
@@ -150,16 +160,24 @@ const requestEmailUpdate = (req, res, next) => {
         JWT_UPDATE_EMAIL,
         { expiresIn: '20m' },
       );
-      const data = {
+      const dataToOldEmail = {
         from: NODEMAILER_USER,
-        to: email,
+        to: oldEmail,
         subject: REQUEST_UPDATE_EMAIL_SUBJECT,
         text: REQUEST_UPDATE_EMAIL_TEXT,
         html: emailConfirmationEmailMarkup(token),
       };
+      const dataToNewEmail = {
+        from: NODEMAILER_USER,
+        to: newEmail,
+        subject: WARNING_UPDATE_EMAIL_SUBJECT,
+        text: WARNING_UPDATE_EMAIL_TEXT,
+        html: warningOfChangingEmailMarkup,
+      };
       user.updateOne({ updateEmailLink: token })
         .then(() => {
-          transporter.sendMail(data);
+          transporter.sendMail(dataToOldEmail);
+          transporter.sendMail(dataToNewEmail);
           res.status(200).send({ message: 'E-mail has been sent, please follow the instructions.' });
         });
     });
