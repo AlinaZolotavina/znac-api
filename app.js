@@ -29,14 +29,14 @@ mongoose.connect(DB_URL, {
 });
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow',
+    'Origin, X-Requested-With, Content-Type, Accept',
   );
   res.setHeader(
     'Access-Control-Allow-Methods',
-    'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD',
   );
   res.setHeader('Access-Control-Allow-Credentials', true);
   if (req.method === 'OPTIONS') {
