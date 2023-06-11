@@ -8,7 +8,7 @@ const photoSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator(v) {
-        return isUrl(v);
+        return isUrl(v, { require_tld: false });
       },
       message: IMAGE_BAD_URL_ERROR_MSG,
     },

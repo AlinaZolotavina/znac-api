@@ -1,4 +1,6 @@
 const express = require('express');
+const fileUpload = require('express-fileupload');
+const path = require('path');
 const mongoose = require('mongoose');
 require('dotenv').config();
 const cookieParser = require('cookie-parser');
@@ -19,6 +21,13 @@ const {
 
 const app = express();
 
+app.use(fileUpload({
+  createParentPath: true,
+  uploadTimeout: 0,
+}));
+
+app.use(express.static(path.join(__dirname, '/public')));
+
 app.use(cookieParser());
 
 app.use(bodyParser.json());
@@ -29,7 +38,7 @@ mongoose.connect(DB_URL, {
 });
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'Origin, X-Requested-With, Content-Type, Accept',

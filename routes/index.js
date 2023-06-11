@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { getPhotos, findPhoto } = require('../controllers/photos');
+const { getPhotos, findPhoto, uploadPhoto } = require('../controllers/photos');
 const {
   getHashtags,
   addHashtag,
@@ -17,6 +17,7 @@ const { NOT_FOUND_ERROR_MSG } = require('../utils/constants');
 
 router.get('/photos', getPhotos);
 router.post('/photos/found', findPhoto);
+router.post('/public', uploadPhoto);
 router.get('/hashtags', getHashtags);
 router.post('/hashtags', addHashtag);
 // router.delete('/hashtags', deleteHashtag);

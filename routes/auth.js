@@ -1,17 +1,17 @@
 const router = require('express').Router();
 const {
-  // validateSignup,
+  validateSignup,
   validateSignin,
 } = require('../middlewares/validateRequests');
 const {
-  // createUser,
+  createUser,
   login,
   logout,
   forgotPassword,
   resetPassword,
 } = require('../controllers/users');
 
-// router.post('/signup', validateSignup, createUser);
+router.post('/signup', validateSignup, createUser);
 router.post('/signin', validateSignin, login);
 router.delete('/signout', logout);
 router.put('/forgot-password', forgotPassword);

@@ -4,7 +4,7 @@ const BadRequestError = require('../errors/bad-request-err');
 const { BAD_URL_ERROR_MSG } = require('../utils/constants');
 
 const validateUrl = (url) => {
-  if (!isUrl(url)) {
+  if (!isUrl(url, { require_tld: false })) {
     throw new BadRequestError(BAD_URL_ERROR_MSG);
   }
   return url;
