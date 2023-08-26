@@ -66,7 +66,7 @@ const uploadPhoto = (req, res, next) => {
     return next(new NotFoundError('No photo to upload'));
   }
   const { file } = req.files;
-  const filePath = new URL(`./${file.name}`, 'http://api.znac.org/');
+  const filePath = new URL(`./${file.name}`, 'https://api.znac.org/');
   return file.mv(`./public/${file.name}`)
     .then(() => {
       res.status(200).send({
