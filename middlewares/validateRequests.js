@@ -45,10 +45,26 @@ const validatePhotoRequest = celebrate({
   }),
 });
 
+const validatePostRequest = celebrate({
+  params: Joi.object().keys({
+    postId: Joi.string().required().alphanum().length(24)
+    .hex(),
+  }),
+});
+
+const validateProjectRequest = celebrate({
+  params: Joi.object().keys({
+    projectId: Joi.string().required().alphanum().length(24)
+    .hex(),
+  }),
+});
+
 module.exports = {
   validateSignup,
   validateSignin,
   validateUpdateUserEmail,
   validateAddPhoto,
   validatePhotoRequest,
+  validatePostRequest,
+  validateProjectRequest,
 };
