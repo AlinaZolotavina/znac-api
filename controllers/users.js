@@ -1,22 +1,19 @@
-const {
-  JWT_SECRET,
-  JWT_RESET_PASSWORD,
-  JWT_UPDATE_EMAIL,
-  NODEMAILER_USER,
-} = process.env;
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const transporter = require('../utils/nodemailerTransporter');
+/* eslint-disable no-unused-vars */
+const { JWT_SECRET, JWT_RESET_PASSWORD, JWT_UPDATE_EMAIL, NODEMAILER_USER } =
+  process.env;
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const transporter = require("../utils/nodemailerTransporter");
 const {
   resetPasswordEmailMarkup,
   successfullPasswordUpdateEmailMarkup,
   emailConfirmationEmailMarkup,
   warningOfChangingEmailMarkup,
-} = require('../utils/emailHtmlMarkup');
-const NotFoundError = require('../errors/not-found-err');
-const ConflictError = require('../errors/conflict-err');
-const BadRequestError = require('../errors/bad-request-err');
-const UnauthorizedError = require('../errors/unauthorized-err');
+} = require("../utils/emailHtmlMarkup");
+const NotFoundError = require("../errors/not-found-err");
+const ConflictError = require("../errors/conflict-err");
+const BadRequestError = require("../errors/bad-request-err");
+const UnauthorizedError = require("../errors/unauthorized-err");
 
 const {
   CONFLICT_SIGNUP_EMAIL_ERROR_MSG,
@@ -43,29 +40,34 @@ const {
   RESET_PASSWORD_TEXT,
   WARNING_UPDATE_EMAIL_SUBJECT,
   WARNING_UPDATE_EMAIL_TEXT,
-} = require('../utils/constants');
+} = require("../utils/constants");
 
-const User = require('../models/user');
+const User = require("../models/user");
 
 const createUser = (req, res, next) => {
-  const {
-    name, email, password,
-  } = req.body;
-  bcrypt.hash(password, 10)
-    .then((hash) => User.create({
-      name, email, password: hash,
-    }))
-    .then((user) => res.status(201).send({
-      user: {
-        _id: user._id,
-        email: user.email,
-      },
-    }))
+  const { name, email, password } = req.body;
+  bcrypt
+    .hash(password, 10)
+    .then((hash) =>
+      User.create({
+        name,
+        email,
+        password: hash,
+      })
+    )
+    .then((user) =>
+      res.status(201).send({
+        user: {
+          _id: user._id,
+          email: user.email,
+        },
+      })
+    )
     .catch((err) => {
-      if (err.name === 'MongoServerError' || err.code === 11000) {
+      if (err.name === "MongoServerError" || err.code === 11000) {
         return next(new ConflictError(CONFLICT_SIGNUP_EMAIL_ERROR_MSG));
       }
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === "ValidationError" || err.name === "CastError") {
         return next(new BadRequestError(BAD_REQUEST_ERROR_MSG));
       }
       return next(err);
@@ -76,13 +78,11 @@ const login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign(
-        { _id: user._id },
-        JWT_SECRET,
-        { expiresIn: '7d' },
-      );
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
       res
-        .cookie('jwt', token, {
+        .cookie("jwt", token, {
           maxAge: 3600000 * 24 * 7,
           httpOnly: true,
           // sameSite: 'none',
@@ -100,38 +100,25 @@ const login = (req, res, next) => {
 };
 
 const logout = (req, res, next) => {
-  const { email } = req.body;
   const token = req.cookies.jwt;
 
   if (!token) {
-    return new UnauthorizedError(TOKEN_ERROR_MSG);
+    return next(new UnauthorizedError(TOKEN_ERROR_MSG));
   }
 
-  let verifiedUser;
-  return User.findOne({ email })
-    .then((user) => {
-      if (!user) {
-        return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
-      }
-      jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-          return next(new UnauthorizedError(UNAUTHORIZED_ERROR_MSG));
-        }
-        verifiedUser = decoded;
-        if (user._id.toHexString() !== verifiedUser._id) {
-          return next(new UnauthorizedError(UNAUTHORIZED_ERROR_MSG));
-        }
-        return res
-          .clearCookie('jwt', {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true,
-          })
-          .send({ message: SUCCESSFUL_LOGOUT_MSG });
-      });
-      return true;
-    })
-    .catch(next);
+  try {
+    jwt.verify(token, JWT_SECRET);
+
+    return res
+      .clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+      })
+      .send({ message: SUCCESSFUL_LOGOUT_MSG });
+  } catch (err) {
+    return next(new UnauthorizedError(UNAUTHORIZED_ERROR_MSG));
+  }
 };
 
 const getMe = (req, res, next) => {
@@ -150,37 +137,35 @@ const requestEmailUpdate = (req, res, next) => {
   if (newEmail === oldEmail) {
     next(new ConflictError(CONFLICT_UPDATE_EMAIL_ERROR_MSG));
   }
-  User.findById(req.user._id)
-    .then((user) => {
-      if (!user) {
-        next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
-      }
-      const token = jwt.sign(
-        { _id: user._id },
-        JWT_UPDATE_EMAIL,
-        { expiresIn: '20m' },
-      );
-      const dataToOldEmail = {
-        from: NODEMAILER_USER,
-        to: oldEmail,
-        subject: REQUEST_UPDATE_EMAIL_SUBJECT,
-        text: REQUEST_UPDATE_EMAIL_TEXT,
-        html: emailConfirmationEmailMarkup(token),
-      };
-      const dataToNewEmail = {
-        from: NODEMAILER_USER,
-        to: newEmail,
-        subject: WARNING_UPDATE_EMAIL_SUBJECT,
-        text: WARNING_UPDATE_EMAIL_TEXT,
-        html: warningOfChangingEmailMarkup,
-      };
-      user.updateOne({ updateEmailLink: token })
-        .then(() => {
-          transporter.sendMail(dataToOldEmail);
-          transporter.sendMail(dataToNewEmail);
-          res.status(200).send({ message: 'E-mail has been sent, please follow the instructions.' });
-        });
+  User.findById(req.user._id).then((user) => {
+    if (!user) {
+      next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
+    }
+    const token = jwt.sign({ _id: user._id }, JWT_UPDATE_EMAIL, {
+      expiresIn: "20m",
     });
+    const dataToOldEmail = {
+      from: NODEMAILER_USER,
+      to: oldEmail,
+      subject: REQUEST_UPDATE_EMAIL_SUBJECT,
+      text: REQUEST_UPDATE_EMAIL_TEXT,
+      html: emailConfirmationEmailMarkup(token),
+    };
+    const dataToNewEmail = {
+      from: NODEMAILER_USER,
+      to: newEmail,
+      subject: WARNING_UPDATE_EMAIL_SUBJECT,
+      text: WARNING_UPDATE_EMAIL_TEXT,
+      html: warningOfChangingEmailMarkup,
+    };
+    user.updateOne({ updateEmailLink: token }).then(() => {
+      transporter.sendMail(dataToOldEmail);
+      transporter.sendMail(dataToNewEmail);
+      res.status(200).send({
+        message: "E-mail has been sent, please follow the instructions.",
+      });
+    });
+  });
 };
 
 const updateEmail = (req, res, next) => {
@@ -194,18 +179,24 @@ const updateEmail = (req, res, next) => {
     if (error) {
       next(new UnauthorizedError(RESET_TOKEN_ERROR_MSG));
     }
-    User.findByIdAndUpdate(userId, { email: newEmail, updateEmailLink: '' }, { new: true, runValidators: true })
+    User.findByIdAndUpdate(
+      userId,
+      { email: newEmail, updateEmailLink: "" },
+      { new: true, runValidators: true }
+    )
       .then((user) => {
         if (!user) {
           return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
         }
-        return res.status(200).send({ message: SUCCESSFUL_EMAIL_UPDATE_MSG, user });
+        return res
+          .status(200)
+          .send({ message: SUCCESSFUL_EMAIL_UPDATE_MSG, user });
       })
       .catch((err) => {
-        if (err.name === 'MongoServerError' || err.code === 11000) {
+        if (err.name === "MongoServerError" || err.code === 11000) {
           return next(new ConflictError(CONFLICT_UPDATE_EMAIL_ERROR_MSG));
         }
-        if (err.name === 'ValidationError' || err.name === 'CastError') {
+        if (err.name === "ValidationError" || err.name === "CastError") {
           return next(new BadRequestError(BAD_REQUEST_ERROR_MSG));
         }
         return next(err);
@@ -215,22 +206,24 @@ const updateEmail = (req, res, next) => {
 
 const updatePassword = (req, res, next) => {
   const { email, oldPassword, newPassword } = req.body;
-  User.findOne({ email }).select('+password')
+  User.findOne({ email })
+    .select("+password")
     .then((user) => {
       if (!user) {
         return next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
       }
-      return bcrypt.compare(oldPassword, user.password)
-        .then((matched) => {
-          if (!matched) {
-            throw new UnauthorizedError(WRONG_PASSWORD_ERROR_MSG);
-          }
-          bcrypt.hash(newPassword, 10)
-            .then((hash) => {
-              user.updateOne({ password: hash }, { new: true, runValidators: true })
-                .then(() => res.status(200).send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG }));
-            });
+      return bcrypt.compare(oldPassword, user.password).then((matched) => {
+        if (!matched) {
+          throw new UnauthorizedError(WRONG_PASSWORD_ERROR_MSG);
+        }
+        bcrypt.hash(newPassword, 10).then((hash) => {
+          user
+            .updateOne({ password: hash }, { new: true, runValidators: true })
+            .then(() =>
+              res.status(200).send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG })
+            );
         });
+      });
     })
     .catch(next);
 };
@@ -242,11 +235,9 @@ const forgotPassword = (req, res, next) => {
       if (!user) {
         next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
       }
-      const token = jwt.sign(
-        { _id: user._id },
-        JWT_RESET_PASSWORD,
-        { expiresIn: '20m' },
-      );
+      const token = jwt.sign({ _id: user._id }, JWT_RESET_PASSWORD, {
+        expiresIn: "20m",
+      });
       const data = {
         from: NODEMAILER_USER,
         to: email,
@@ -254,11 +245,10 @@ const forgotPassword = (req, res, next) => {
         text: FORGOT_PASSWORD_TEXT,
         html: resetPasswordEmailMarkup(token),
       };
-      user.updateOne({ resetPasswordLink: token })
-        .then(() => {
-          transporter.sendMail(data);
-          res.status(200).send({ message: EMAIL_SENT_SUCCESSFULLY_MSG });
-        });
+      user.updateOne({ resetPasswordLink: token }).then(() => {
+        transporter.sendMail(data);
+        res.status(200).send({ message: EMAIL_SENT_SUCCESSFULLY_MSG });
+      });
     })
     .catch(next);
 };
@@ -270,42 +260,48 @@ const resetPassword = (req, res, next) => {
     next(new UnauthorizedError(AUTHENTICATION_ERROR_MSG));
   }
   if (newPassword.toString() !== confirmPassword.toString()) {
-    next(new BadRequestError('Введенные пароли не совпадают'));
+    next(new BadRequestError("Введенные пароли не совпадают"));
   }
   // eslint-disable-next-line no-unused-vars
-  jwt.verify(resetPasswordLink, JWT_RESET_PASSWORD, (err, decoded) => {
-    if (err) {
-      return next(new UnauthorizedError(RESET_TOKEN_ERROR_MSG));
-    }
-    return User.findOne({ resetPasswordLink }).select('+password')
-      .then((user) => {
-        if (!user) {
-          next(new NotFoundError(NO_RESET_TOKEN_ERROR_MSG));
-        }
-        bcrypt.compare(newPassword, user.password)
-          .then((matched) => {
+  jwt
+    .verify(resetPasswordLink, JWT_RESET_PASSWORD, (err, decoded) => {
+      if (err) {
+        return next(new UnauthorizedError(RESET_TOKEN_ERROR_MSG));
+      }
+      return User.findOne({ resetPasswordLink })
+        .select("+password")
+        .then((user) => {
+          if (!user) {
+            next(new NotFoundError(NO_RESET_TOKEN_ERROR_MSG));
+          }
+          bcrypt.compare(newPassword, user.password).then((matched) => {
             if (matched) {
               next(new ConflictError(NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG));
             } else {
-              bcrypt.hash(newPassword, 10)
-                .then((hash) => {
-                  user.updateOne({ password: hash, resetPasswordLink: '' }, { new: true, runValidators: true })
-                    .then(() => {
-                      const data = {
-                        from: NODEMAILER_USER,
-                        to: user.email,
-                        subject: RESET_PASSWORD_SUBJECT,
-                        text: RESET_PASSWORD_TEXT,
-                        html: successfullPasswordUpdateEmailMarkup,
-                      };
-                      transporter.sendMail(data);
-                      res.status(200).send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG });
-                    });
-                });
+              bcrypt.hash(newPassword, 10).then((hash) => {
+                user
+                  .updateOne(
+                    { password: hash, resetPasswordLink: "" },
+                    { new: true, runValidators: true }
+                  )
+                  .then(() => {
+                    const data = {
+                      from: NODEMAILER_USER,
+                      to: user.email,
+                      subject: RESET_PASSWORD_SUBJECT,
+                      text: RESET_PASSWORD_TEXT,
+                      html: successfullPasswordUpdateEmailMarkup,
+                    };
+                    transporter.sendMail(data);
+                    res
+                      .status(200)
+                      .send({ message: SUCCESSFUL_PASSWORD_UPDATE_MSG });
+                  });
+              });
             }
           });
-      });
-  })
+        });
+    })
     .catch(next);
 };
 
