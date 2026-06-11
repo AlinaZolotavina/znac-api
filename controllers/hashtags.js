@@ -1,8 +1,9 @@
-const NotFoundError = require('../errors/not-found-err');
-const Hashtag = require('../models/hashtag');
+const NotFoundError = require("../errors/not-found-err");
+const Hashtag = require("../models/hashtag");
 
 const getHashtags = (req, res, next) => {
-  Hashtag.find({}).sort({ createdAt: 'desc' })
+  Hashtag.find({})
+    .sort({ createdAt: "desc" })
     .then((hashtags) => res.status(200).send(hashtags))
     .catch(next);
 };
@@ -29,10 +30,14 @@ const addHashtag = (req, res, next) => {
 
 const updateHashtag = (req, res, next) => {
   const { hashtagName } = req.body;
-  Hashtag.findOneAndUpdate({ name: hashtagName }, { createdAt: Date.now() }, { returnDocument: 'after' })
+  Hashtag.findOneAndUpdate(
+    { name: hashtagName },
+    { createdAt: Date.now() },
+    { returnDocument: "after" }
+  )
     .then((hashtag) => {
       if (!hashtag) {
-        return next(new NotFoundError('Hashtag not found'));
+        return next(new NotFoundError("Hashtag not found"));
       }
       return res.status(201).send(hashtag);
     })

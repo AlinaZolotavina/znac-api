@@ -1,32 +1,36 @@
-const express = require('express');
-const fileUpload = require('express-fileupload');
-const path = require('path');
-const mongoose = require('mongoose');
-require('dotenv').config();
-const cookieParser = require('cookie-parser');
-const bodyParser = require('body-parser');
-const { errors } = require('celebrate');
-const helmet = require('helmet');
+const express = require("express");
+const fileUpload = require("express-fileupload");
+const path = require("path");
+const mongoose = require("mongoose");
+require("dotenv").config();
+const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
+const { errors } = require("celebrate");
+const helmet = require("helmet");
 // const cors = require('cors');
 // const corsOptions = require('./utils/corsOptions');
-const router = require('./routes');
-const errorHandler = require('./middlewares/errorHandler');
-const { requestLogger, errorLogger } = require('./middlewares/logger');
-const rateLimiter = require('./middlewares/rateLimiter');
+const router = require("./routes");
+const errorHandler = require("./middlewares/errorHandler");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
+const rateLimiter = require("./middlewares/rateLimiter");
 
-const {
-  PORT,
-  DB_URL,
-} = require('./utils/config');
+const { PORT, DB_URL } = require("./utils/config");
 
 const app = express();
 
-app.use(fileUpload({
-  createParentPath: true,
-  uploadTimeout: 0,
-}));
+app.use(
+  fileUpload({
+    createParentPath: false,
+    uploadTimeout: 60000,
+    abortOnLimit: true,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10 MB
+      files: 1,
+    },
+  })
+);
 
-app.use(express.static(path.join(__dirname, '/public')));
+app.use("/public", express.static(path.join(__dirname, "public")));
 
 app.use(cookieParser());
 
@@ -38,18 +42,18 @@ mongoose.connect(DB_URL, {
 });
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');
-  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  // res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept',
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
   );
   res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD',
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
   );
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  if (req.method === 'OPTIONS') {
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  if (req.method === "OPTIONS") {
     res.sendStatus(200);
   } else {
     next();

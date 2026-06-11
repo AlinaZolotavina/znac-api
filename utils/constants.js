@@ -1,44 +1,51 @@
-const INTERNAL_SERVER_ERROR = 'Internal Server Error';
-const NOT_FOUND_ERROR_MSG = 'The server can not find the requested resource';
-const USER_NOT_FOUND_ERROR_MSG = 'User is not found';
-const PHOTO_NOT_FOUND_ERROR_MSG = 'Photo is not found';
-const BAD_REQUEST_ERROR_MSG = 'The entered data is incorrect';
-const BAD_URL_ERROR_MSG = 'Invalid Link';
-const IMAGE_BAD_URL_ERROR_MSG = 'Invalid image link';
-const BAD_EMAIL_ERROR_MSG = 'Invalid email';
-const UNAUTHORIZED_ERROR_MSG = 'Authorization required';
-const WRONG_EMAIL_OR_PASSWORD_ERROR_MSG = 'Wrong email or password';
-const WRONG_PASSWORD_ERROR_MSG = 'The password is wrong';
-const TOKEN_ERROR_MSG = 'Token error';
-const CONFLICT_SIGNUP_EMAIL_ERROR_MSG = 'User with this email already exists';
-const FORBIDDEN_ERROR_MSG = 'You are not allowed to delete this photo';
-const CONFLICT_UPDATE_EMAIL_ERROR_MSG = 'The email you entered is already in use';
-const AUTHENTICATION_ERROR_MSG = 'Authentication error';
-const RESET_TOKEN_ERROR_MSG = 'Incorrect token or it is expired';
-const NO_RESET_TOKEN_ERROR_MSG = 'User with this token does not exist';
+const INTERNAL_SERVER_ERROR = "Internal Server Error";
+const NOT_FOUND_ERROR_MSG = "The server can not find the requested resource";
+const USER_NOT_FOUND_ERROR_MSG = "User is not found";
+const PHOTO_NOT_FOUND_ERROR_MSG = "Photo is not found";
+const POST_NOT_FOUND_ERROR_MSG = "Post is not found";
+const BAD_REQUEST_ERROR_MSG = "The entered data is incorrect";
+const BAD_URL_ERROR_MSG = "Invalid Link";
+const IMAGE_BAD_URL_ERROR_MSG = "Invalid image link";
+const BAD_EMAIL_ERROR_MSG = "Invalid email";
+const UNAUTHORIZED_ERROR_MSG = "Authorization required";
+const WRONG_EMAIL_OR_PASSWORD_ERROR_MSG = "Wrong email or password";
+const WRONG_PASSWORD_ERROR_MSG = "The password is wrong";
+const TOKEN_ERROR_MSG = "Token error";
+const CONFLICT_SIGNUP_EMAIL_ERROR_MSG = "User with this email already exists";
+const SUCCESSFUL_POST_DELETE_MSG = "Post is deleted";
+const FORBIDDEN_ERROR_MSG = "You are not allowed to delete this photo";
+const CONFLICT_UPDATE_EMAIL_ERROR_MSG =
+  "The email you entered is already in use";
+const AUTHENTICATION_ERROR_MSG = "Authentication error";
+const RESET_TOKEN_ERROR_MSG = "Incorrect token or it is expired";
+const NO_RESET_TOKEN_ERROR_MSG = "User with this token does not exist";
 
-const SUCCESSFUL_LOGIN_MSG = 'You have successfully logged in';
-const SUCCESSFUL_LOGOUT_MSG = 'You successfully logged out';
-const SUCCESSFUL_EMAIL_UPDATE_MSG = 'Your email has been updated';
-const SUCCESSFUL_PASSWORD_UPDATE_MSG = 'Your password has been updated';
-const SUCCESSFUL_PHOTO_DELETE_MSG = 'The photo has been deleted';
-const EMAIL_SENT_SUCCESSFULLY_MSG = 'Email has been sent, please follow the instructions.';
+const SUCCESSFUL_LOGIN_MSG = "You have successfully logged in";
+const SUCCESSFUL_LOGOUT_MSG = "You successfully logged out";
+const SUCCESSFUL_EMAIL_UPDATE_MSG = "Your email has been updated";
+const SUCCESSFUL_PASSWORD_UPDATE_MSG = "Your password has been updated";
+const SUCCESSFUL_PHOTO_DELETE_MSG = "The photo has been deleted";
+const EMAIL_SENT_SUCCESSFULLY_MSG =
+  "Email has been sent, please follow the instructions.";
 
-const REQUEST_UPDATE_EMAIL_SUBJECT = 'Confirm your email';
-const REQUEST_UPDATE_EMAIL_TEXT = 'We got a request to change your email.';
-const FORGOT_PASSWORD_SUBJECT = 'Reset your password';
-const FORGOT_PASSWORD_TEXT = 'We got a request to reset your password.';
-const NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG = 'The new password is the same as the previous one';
-const RESET_PASSWORD_SUBJECT = 'Your password has been changed';
-const RESET_PASSWORD_TEXT = 'Your password has been changed';
-const WARNING_UPDATE_EMAIL_SUBJECT = 'Your email will be using on the www.znac.org';
-const WARNING_UPDATE_EMAIL_TEXT = 'You or someone else want to use this email.';
+const REQUEST_UPDATE_EMAIL_SUBJECT = "Confirm your email";
+const REQUEST_UPDATE_EMAIL_TEXT = "We got a request to change your email.";
+const FORGOT_PASSWORD_SUBJECT = "Reset your password";
+const FORGOT_PASSWORD_TEXT = "We got a request to reset your password.";
+const NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG =
+  "The new password is the same as the previous one";
+const RESET_PASSWORD_SUBJECT = "Your password has been changed";
+const RESET_PASSWORD_TEXT = "Your password has been changed";
+const WARNING_UPDATE_EMAIL_SUBJECT =
+  "Your email will be using on the www.znac.org";
+const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 
 module.exports = {
   INTERNAL_SERVER_ERROR,
   NOT_FOUND_ERROR_MSG,
   USER_NOT_FOUND_ERROR_MSG,
   PHOTO_NOT_FOUND_ERROR_MSG,
+  POST_NOT_FOUND_ERROR_MSG,
   BAD_REQUEST_ERROR_MSG,
   BAD_URL_ERROR_MSG,
   IMAGE_BAD_URL_ERROR_MSG,
@@ -47,6 +54,7 @@ module.exports = {
   WRONG_EMAIL_OR_PASSWORD_ERROR_MSG,
   WRONG_PASSWORD_ERROR_MSG,
   TOKEN_ERROR_MSG,
+  SUCCESSFUL_POST_DELETE_MSG,
   CONFLICT_SIGNUP_EMAIL_ERROR_MSG,
   FORBIDDEN_ERROR_MSG,
   CONFLICT_UPDATE_EMAIL_ERROR_MSG,

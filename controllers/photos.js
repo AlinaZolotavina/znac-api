@@ -1,8 +1,13 @@
 /* eslint-disable no-console */
-const fs = require('fs');
-const Photo = require('../models/photo');
-const NotFoundError = require('../errors/not-found-err');
-const { PHOTO_NOT_FOUND_ERROR_MSG, SUCCESSFUL_PHOTO_DELETE_MSG } = require('../utils/constants');
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const Photo = require("../models/photo");
+const NotFoundError = require("../errors/not-found-err");
+const {
+  PHOTO_NOT_FOUND_ERROR_MSG,
+  SUCCESSFUL_PHOTO_DELETE_MSG,
+} = require("../utils/constants");
 
 const getPhotos = (req, res, next) => {
   Photo.find({})
@@ -21,65 +26,109 @@ const findPhoto = (req, res, next) => {
 
 const deletePhoto = (req, res, next) => {
   const { photoId } = req.params;
-  Photo.findById(photoId)
+
+  Photo.findOneAndDelete({
+    _id: photoId,
+    owner: req.user._id,
+  })
     .then((photo) => {
       if (!photo) {
-        return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
+        throw new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG);
       }
-      // if (photo.owner._id.toString() !== req.user._id.toString()) {
-      //   return next(new ForbiddenError(FORBIDDEN_ERROR_MSG));
-      // }
-      const photoName = photo.link.slice((photo.link.lastIndexOf('/') + 1));
+
+      const photoName = photo.link.slice(photo.link.lastIndexOf("/") + 1);
+
       const path = `./public/${photoName}`;
+
       fs.access(path, fs.constants.F_OK, (error) => {
         if (error) {
           console.error(`File ${path} does not exist.`);
         } else {
-          console.error(`File ${path} exists.`);
           fs.unlink(path, (err) => {
             if (err) {
               console.error(`Failed to delete file: ${err}`);
-              return false;
             }
-            console.log(`File ${path} has been successfully deleted.`);
-            return true;
           });
         }
       });
-      return photo.remove();
-    })
-    .then(() => {
-      res.status(200).send({ message: SUCCESSFUL_PHOTO_DELETE_MSG });
+
+      res.status(200).send({
+        message: SUCCESSFUL_PHOTO_DELETE_MSG,
+      });
     })
     .catch(next);
 };
 
 const addPhoto = (req, res) => {
-  const owner = req.user._id;
-  Photo.create({ owner, ...req.body })
+  Photo.create({ ...req.body, owner: req.user._id })
     .then((photo) => res.status(201).send(photo))
     .catch((err) => console.log(err));
 };
 
-const uploadPhoto = (req, res, next) => {
-  if (!req.files || Object.keys(req.files).length === 0) {
-    return next(new NotFoundError('No photo to upload'));
-  }
-  const { file } = req.files;
-  const filePath = new URL(`./${file.name}`, 'https://api.znac.org/');
-  return file.mv(`./public/${file.name}`)
-    .then(() => {
-      res.status(200).send({
-        status: true,
-        message: 'Photo is uploaded',
-        data: {
-          name: file.name,
-          size: file.size,
-          path: filePath,
-        },
+const uploadPhoto = async (req, res, next) => {
+  try {
+    if (!req.files || !req.files.file) {
+      return next(new NotFoundError("No photo to upload"));
+    }
+
+    const MAX_FILES_COUNT = 10;
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+
+    const files = Array.isArray(req.files.file)
+      ? req.files.file
+      : [req.files.file];
+
+    if (files.length > MAX_FILES_COUNT) {
+      return res.status(400).send({
+        message: `Maximum ${MAX_FILES_COUNT} files allowed`,
       });
-    })
-    .catch(next);
+    }
+
+    const uploadedFiles = [];
+
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        return res.status(400).send({
+          message: `File ${file.name} exceeds maximum size`,
+        });
+      }
+
+      const extension = path.extname(file.name).toLowerCase();
+
+      if (
+        !allowedMimeTypes.includes(file.mimetype) ||
+        !allowedExtensions.includes(extension)
+      ) {
+        return res.status(400).send({
+          message: `Unsupported file type: ${file.name}`,
+        });
+      }
+
+      const safeFileName = `${crypto.randomUUID()}${extension}`;
+
+      const uploadPath = path.join(__dirname, "../public", safeFileName);
+
+      await file.mv(uploadPath);
+
+      uploadedFiles.push({
+        name: safeFileName,
+        size: file.size,
+        path: `https://api.znac.org/public/${safeFileName}`,
+      });
+    }
+
+    return res.status(201).send({
+      status: true,
+      message: "Files uploaded successfully",
+      data: uploadedFiles,
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const increaseViews = (req, res, next) => {
@@ -91,8 +140,7 @@ const increaseViews = (req, res, next) => {
         return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
       }
       viewsCount = photo.views + 1;
-      return photo.updateOne({ views: viewsCount })
-        .then(() => res.send(photo));
+      return photo.updateOne({ views: viewsCount }).then(() => res.send(photo));
     })
     .catch((err) => console.log(err));
 };
@@ -100,12 +148,26 @@ const increaseViews = (req, res, next) => {
 const editHashtags = (req, res, next) => {
   const { photoId } = req.params;
   const { newHashtags } = req.body;
-  Photo.findByIdAndUpdate(photoId, { hashtags: newHashtags }, { new: true, runValidators: true })
+
+  Photo.findOneAndUpdate(
+    {
+      _id: photoId,
+      owner: req.user._id,
+    },
+    {
+      hashtags: newHashtags,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  )
     .then((photo) => {
       if (!photo) {
-        return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
+        throw new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG);
       }
-      return res.send(photo);
+
+      res.send(photo);
     })
     .catch(next);
 };
