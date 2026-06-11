@@ -7,7 +7,7 @@ const {
   // ETHEREAL_USER,
   // ETHEREAL_PASSWORD,
 } = process.env;
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: NODEMAILER_SERVISE,

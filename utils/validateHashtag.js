@@ -4,5 +4,7 @@ module.exports.validateHashtag = (hashtag) => {
   if (regex.test(hashtag)) {
     return hashtag;
   }
-  throw new Error('Only letters, numbers and underscores are allowed for hashtags');
+  throw new Error(
+    "Only letters, numbers and underscores are allowed for hashtags"
+  );
 };

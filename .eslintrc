@@ -1,6 +1,22 @@
 {
-  "extends": "airbnb-base",
+  "env": {
+    "node": true,
+    "es2021": true,
+  },
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "module",
+  },
+  "extends": ["eslint:recommended", "plugin:prettier/recommended"],
   "rules": {
-    "no-underscore-dangle": ["error", { "allow": ["_id"] }]
-  }
+    "no-underscore-dangle": ["error", { "allow": ["_id"] }],
+    "linebreak-style": "off",
+    "comma-dangle": "off",
+    "@stylistic/js/comma-dangle": "off",
+    "@stylistic/comma-dangle": "off",
+    "@stylistic/ts/comma-dangle": "off",
+    "@typescript-eslint/comma-dangle": "off",
+    "vue/comma-dangle": "off",
+    "no-comma-dangle": "off",
+  },
 }

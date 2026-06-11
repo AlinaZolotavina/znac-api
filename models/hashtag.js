@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { validateHashtag } = require('../utils/validateHashtag');
+const mongoose = require("mongoose");
+const { validateHashtag } = require("../utils/validateHashtag");
 
 const hashtagSchema = new mongoose.Schema({
   name: {
@@ -9,7 +9,7 @@ const hashtagSchema = new mongoose.Schema({
       validator(v) {
         return validateHashtag(v);
       },
-      message: 'Only letters, numbers and underscores are allowed for hashtags',
+      message: "Only letters, numbers and underscores are allowed for hashtags",
     },
     minLength: 2,
     maxLength: 30,
@@ -20,4 +20,4 @@ const hashtagSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('hashtag', hashtagSchema);
+module.exports = mongoose.model("hashtag", hashtagSchema);

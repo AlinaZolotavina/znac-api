@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const isUrl = require('validator/lib/isURL');
-const { IMAGE_BAD_URL_ERROR_MSG } = require('../utils/constants');
+const mongoose = require("mongoose");
+const isUrl = require("validator/lib/isURL");
+const { IMAGE_BAD_URL_ERROR_MSG } = require("../utils/constants");
 
 const photoSchema = new mongoose.Schema({
   link: {
@@ -15,7 +15,7 @@ const photoSchema = new mongoose.Schema({
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'user',
+    ref: "user",
     required: true,
   },
   hashtags: {
@@ -34,4 +34,4 @@ const photoSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('photo', photoSchema);
+module.exports = mongoose.model("photo", photoSchema);

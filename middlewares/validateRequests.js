@@ -1,7 +1,7 @@
-const { celebrate, Joi } = require('celebrate');
-const isUrl = require('validator/lib/isURL');
-const BadRequestError = require('../errors/bad-request-err');
-const { BAD_URL_ERROR_MSG } = require('../utils/constants');
+const { celebrate, Joi } = require("celebrate");
+const isUrl = require("validator/lib/isURL");
+const BadRequestError = require("../errors/bad-request-err");
+const { BAD_URL_ERROR_MSG } = require("../utils/constants");
 
 const validateUrl = (url) => {
   if (!isUrl(url, { require_tld: false })) {
@@ -40,22 +40,19 @@ const validateAddPhoto = celebrate({
 
 const validatePhotoRequest = celebrate({
   params: Joi.object().keys({
-    photoId: Joi.string().required().alphanum().length(24)
-      .hex(),
+    photoId: Joi.string().required().alphanum().length(24).hex(),
   }),
 });
 
 const validatePostRequest = celebrate({
   params: Joi.object().keys({
-    postId: Joi.string().required().alphanum().length(24)
-    .hex(),
+    postId: Joi.string().required().alphanum().length(24).hex(),
   }),
 });
 
 const validateProjectRequest = celebrate({
   params: Joi.object().keys({
-    projectId: Joi.string().required().alphanum().length(24)
-    .hex(),
+    projectId: Joi.string().required().alphanum().length(24).hex(),
   }),
 });
 

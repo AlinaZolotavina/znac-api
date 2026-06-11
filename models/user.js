@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const isEmail = require('validator/lib/isEmail');
-const UnauthorizedError = require('../errors/unauthorized-err');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const isEmail = require("validator/lib/isEmail");
+const UnauthorizedError = require("../errors/unauthorized-err");
 const {
   BAD_EMAIL_ERROR_MSG,
   WRONG_EMAIL_OR_PASSWORD_ERROR_MSG,
-} = require('../utils/constants');
+} = require("../utils/constants");
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -25,28 +25,28 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordLink: {
     data: String,
-    default: '',
+    default: "",
   },
   updateEmailLink: {
     data: String,
-    default: '',
+    default: "",
   },
 });
 
 userSchema.statics.findUserByCredentials = function findUser(email, password) {
-  return this.findOne({ email }).select('+password')
+  return this.findOne({ email })
+    .select("+password")
     .then((user) => {
       if (!user) {
         throw new UnauthorizedError(WRONG_EMAIL_OR_PASSWORD_ERROR_MSG);
       }
-      return bcrypt.compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            throw new UnauthorizedError(WRONG_EMAIL_OR_PASSWORD_ERROR_MSG);
-          }
-          return user;
-        });
+      return bcrypt.compare(password, user.password).then((matched) => {
+        if (!matched) {
+          throw new UnauthorizedError(WRONG_EMAIL_OR_PASSWORD_ERROR_MSG);
+        }
+        return user;
+      });
     });
 };
 
-module.exports = mongoose.model('user', userSchema);
+module.exports = mongoose.model("user", userSchema);
