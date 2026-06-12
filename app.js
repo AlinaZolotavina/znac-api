@@ -3,8 +3,15 @@ const fileUpload = require("express-fileupload");
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config();
+const requiredEnv = ["JWT_SECRET", "DB_URL"];
+
+requiredEnv.forEach((name) => {
+  if (!process.env[name]) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+});
+
 const cookieParser = require("cookie-parser");
-const bodyParser = require("body-parser");
 const { errors } = require("celebrate");
 const helmet = require("helmet");
 // const cors = require('cors');
@@ -14,7 +21,8 @@ const errorHandler = require("./middlewares/errorHandler");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
 const rateLimiter = require("./middlewares/rateLimiter");
 
-const { PORT, DB_URL } = require("./utils/config");
+const { PORT } = require("./utils/config");
+const { DB_URL } = process.env;
 
 const app = express();
 
@@ -34,12 +42,13 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 
 app.use(cookieParser());
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-mongoose.connect(DB_URL, {
-  useNewUrlParser: true,
-});
+mongoose
+  .connect(DB_URL)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 app.use((req, res, next) => {
   // res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');

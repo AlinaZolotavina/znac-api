@@ -31,6 +31,8 @@ const findPost = (req, res, next) => {
 
 const deletePost = (req, res, next) => {
   const { postId } = req.params;
+  console.log("req.user =", req.user);
+  console.log("postId =", postId);
 
   Post.findOneAndDelete({
     _id: postId,

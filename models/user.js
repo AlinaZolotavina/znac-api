@@ -24,11 +24,11 @@ const userSchema = new mongoose.Schema({
     select: false,
   },
   resetPasswordLink: {
-    data: String,
+    type: String,
     default: "",
   },
   updateEmailLink: {
-    data: String,
+    type: String,
     default: "",
   },
 });

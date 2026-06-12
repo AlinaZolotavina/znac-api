@@ -79,14 +79,15 @@ const login = (req, res, next) => {
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        algorithm: "HS256",
         expiresIn: "7d",
       });
       res
         .cookie("jwt", token, {
-          maxAge: 3600000 * 24 * 7,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
           httpOnly: true,
-          // sameSite: 'none',
-          // secure: true,
+          secure: true,
+          sameSite: "lax",
         })
         .send({
           user: {
@@ -228,29 +229,36 @@ const updatePassword = (req, res, next) => {
     .catch(next);
 };
 
-const forgotPassword = (req, res, next) => {
-  const { email } = req.body;
-  User.findOne({ email })
-    .then((user) => {
-      if (!user) {
-        next(new NotFoundError(USER_NOT_FOUND_ERROR_MSG));
-      }
+const forgotPassword = async (req, res, next) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+
+    const user = await User.findOne({ email });
+
+    if (user) {
       const token = jwt.sign({ _id: user._id }, JWT_RESET_PASSWORD, {
         expiresIn: "20m",
       });
-      const data = {
+
+      await user.updateOne({
+        resetPasswordLink: token,
+      });
+
+      await transporter.sendMail({
         from: NODEMAILER_USER,
-        to: email,
+        to: user.email,
         subject: FORGOT_PASSWORD_SUBJECT,
         text: FORGOT_PASSWORD_TEXT,
         html: resetPasswordEmailMarkup(token),
-      };
-      user.updateOne({ resetPasswordLink: token }).then(() => {
-        transporter.sendMail(data);
-        res.status(200).send({ message: EMAIL_SENT_SUCCESSFULLY_MSG });
       });
-    })
-    .catch(next);
+    }
+
+    return res.status(200).send({
+      message: EMAIL_SENT_SUCCESSFULLY_MSG,
+    });
+  } catch (err) {
+    return next(err);
+  }
 };
 
 const resetPassword = (req, res, next) => {

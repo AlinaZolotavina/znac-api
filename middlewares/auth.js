@@ -11,7 +11,7 @@ const auth = (req, res, next) => {
   }
   let payload;
   try {
-    payload = jwt.verify(token, JWT_SECRET);
+    payload = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
   } catch (err) {
     return next(new UnauthorizedError(UNAUTHORIZED_ERROR_MSG));
   }
