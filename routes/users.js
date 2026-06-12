@@ -1,5 +1,8 @@
 const router = require("express").Router();
-const { validateUpdateUserEmail } = require("../middlewares/validateRequests");
+const {
+  validateUpdateUserEmail,
+  validateUpdatePassword,
+} = require("../middlewares/validateRequests");
 const {
   getMe,
   requestEmailUpdate,
@@ -14,6 +17,10 @@ router.patch(
   validateUpdateUserEmail,
   updateEmail
 );
-router.patch("/profile/update-password", updatePassword);
+router.patch(
+  "/profile/update-password",
+  validateUpdatePassword,
+  updatePassword
+);
 
 module.exports = router;

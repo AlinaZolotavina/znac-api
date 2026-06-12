@@ -1,5 +1,9 @@
 const router = require("express").Router();
-const { validatePhotoRequest } = require("../middlewares/validateRequests");
+const {
+  validatePhotoRequest,
+  validateAddPhoto,
+  validatePhotoHashtags,
+} = require("../middlewares/validateRequests");
 const {
   addPhoto,
   deletePhoto,
@@ -7,8 +11,13 @@ const {
 } = require("../controllers/photos");
 
 // router.get('/photos/found', findPhoto);
-router.post("/photos", addPhoto);
+router.post("/photos", validateAddPhoto, addPhoto);
 router.delete("/photos/:photoId", validatePhotoRequest, deletePhoto);
-router.patch("/photos/:photoId/hashtags", validatePhotoRequest, editHashtags);
+router.patch(
+  "/photos/:photoId/hashtags",
+  validatePhotoRequest,
+  validatePhotoHashtags,
+  editHashtags
+);
 
 module.exports = router;

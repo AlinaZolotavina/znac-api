@@ -113,8 +113,7 @@ const uploadPostPhoto = (req, res, next) => {
     return next(new NotFoundError("No post photo to upload"));
   }
   const { file } = req.files;
-  // const filePath = new URL(`./${file.name}`, 'https://api.znac.org/');
-  const filePath = new URL(`./${file.name}`, "http://localhost:4000/");
+  const filePath = `${process.env.API_URL}public/${file.name}`;
   return file
     .mv(`./public/${file.name}`)
     .then(() => {

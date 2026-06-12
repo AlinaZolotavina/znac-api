@@ -1,11 +1,22 @@
 const { celebrate, Joi } = require("celebrate");
 const isUrl = require("validator/lib/isURL");
-const BadRequestError = require("../errors/bad-request-err");
 const { BAD_URL_ERROR_MSG } = require("../utils/constants");
 
-const validateUrl = (url) => {
-  if (!isUrl(url, { require_tld: false })) {
-    throw new BadRequestError(BAD_URL_ERROR_MSG);
+const validateUrl = (url, helpers) => {
+  const options =
+    process.env.NODE_ENV === "production"
+      ? {
+          protocols: ["http", "https"],
+          require_protocol: true,
+          require_tld: true,
+        }
+      : {
+          protocols: ["http", "https"],
+          require_protocol: true,
+          require_tld: false,
+        };
+  if (!isUrl(url, options)) {
+    throw helpers.message(BAD_URL_ERROR_MSG);
   }
   return url;
 };
@@ -30,11 +41,26 @@ const validateUpdateUserEmail = celebrate({
   }),
 });
 
-const validateAddPhoto = celebrate({
+const validateForgotPassword = celebrate({
   body: Joi.object().keys({
-    link: Joi.string().required().custom(validateUrl),
-    hashtags: Joi.string().required().min(2).max(500),
-    views: Joi.number().required().integer(),
+    email: Joi.string().email().required(),
+  }),
+});
+
+const validateResetPassword = celebrate({
+  params: Joi.object().keys({
+    resetPasswordLink: Joi.string().required(),
+  }),
+  body: Joi.object().keys({
+    newPassword: Joi.string().min(8).required(),
+    confirmPassword: Joi.string().min(8).required(),
+  }),
+});
+
+const validateUpdatePassword = celebrate({
+  body: Joi.object().keys({
+    oldPassword: Joi.string().min(8).required(),
+    newPassword: Joi.string().min(8).required(),
   }),
 });
 
@@ -44,9 +70,45 @@ const validatePhotoRequest = celebrate({
   }),
 });
 
+const validateAddPhoto = celebrate({
+  body: Joi.object().keys({
+    link: Joi.string().required().custom(validateUrl),
+    hashtags: Joi.string().required().min(2).max(500),
+    views: Joi.number().required().integer(),
+  }),
+});
+
+const validatePhotoHashtags = celebrate({
+  body: Joi.object().keys({
+    newHashtags: Joi.string().min(2).max(500).required(),
+  }),
+});
+
 const validatePostRequest = celebrate({
   params: Joi.object().keys({
     postId: Joi.string().required().alphanum().length(24).hex(),
+  }),
+});
+
+const validateAddPost = celebrate({
+  body: Joi.object().keys({
+    theme: Joi.string().required(),
+    icon: Joi.string().required(),
+    title: Joi.string().min(2).max(50).required(),
+    photoLink: Joi.string().allow("").custom(validateUrl),
+    hashtags: Joi.string().min(2).max(500).required(),
+    text: Joi.string().min(2).max(5000).required(),
+  }),
+});
+
+const validateUpdatePost = celebrate({
+  body: Joi.object().keys({
+    newTheme: Joi.string().required(),
+    newIcon: Joi.string().required(),
+    newTitle: Joi.string().min(2).max(50).required(),
+    newPhotoLink: Joi.string().allow("").custom(validateUrl),
+    newHashtags: Joi.string().min(2).max(500).required(),
+    newText: Joi.string().min(2).max(5000).required(),
   }),
 });
 
@@ -56,12 +118,46 @@ const validateProjectRequest = celebrate({
   }),
 });
 
+const validateAddProject = celebrate({
+  body: Joi.object().keys({
+    title: Joi.string().min(2).max(50).required(),
+    hashtags: Joi.string().min(2).max(500).required(),
+    text: Joi.string().min(2).max(5000).required(),
+    link: Joi.string().required().custom(validateUrl),
+  }),
+});
+
+const validateUpdateProject = celebrate({
+  body: Joi.object().keys({
+    newTitle: Joi.string().min(2).max(50).required(),
+    newHashtags: Joi.string().min(2).max(500).required(),
+    newText: Joi.string().min(2).max(5000).required(),
+    newLink: Joi.string().required().custom(validateUrl),
+  }),
+});
+
+const validateSearch = celebrate({
+  body: Joi.object().keys({
+    keyWord: Joi.string().allow("").max(100),
+    selectedTheme: Joi.string().max(100),
+  }),
+});
+
 module.exports = {
   validateSignup,
   validateSignin,
   validateUpdateUserEmail,
-  validateAddPhoto,
+  validateForgotPassword,
+  validateResetPassword,
+  validateUpdatePassword,
   validatePhotoRequest,
+  validateAddPhoto,
+  validatePhotoHashtags,
   validatePostRequest,
+  validateAddPost,
+  validateUpdatePost,
   validateProjectRequest,
+  validateAddProject,
+  validateUpdateProject,
+  validateSearch,
 };

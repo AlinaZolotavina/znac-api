@@ -17,7 +17,10 @@ const {
 const upload = require("../middlewares/upload");
 const validateUploadedFiles = require("../middlewares/validateUploadedFiles");
 
-const { validatePhotoRequest } = require("../middlewares/validateRequests");
+const {
+  validatePhotoRequest,
+  validateSearch,
+} = require("../middlewares/validateRequests");
 const auth = require("../middlewares/auth");
 const authRouter = require("./auth");
 const userRouter = require("./users");
@@ -28,17 +31,17 @@ const NotFoundError = require("../errors/not-found-err");
 const { NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
 router.get("/photos", getPhotos);
-router.post("/photos/found", findPhoto);
+router.post("/photos/found", validateSearch, findPhoto);
 router.put("/photos/:photoId/views", validatePhotoRequest, increaseViews);
 
 router.get("/hashtags", getHashtags);
 
 router.get("/posts", getPosts);
-router.post("/posts/found", findPost);
+router.post("/posts/found", validateSearch, findPost);
 // router.delete('/hashtags', deleteHashtag);
 
 router.get("/projects", getProjects);
-router.post("/projects/found", findProject);
+router.post("/projects/found", validateSearch, findProject);
 router.get("/projecthashtags", getProjectHashtags);
 
 router.use(authRouter);

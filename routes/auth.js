@@ -2,6 +2,8 @@ const router = require("express").Router();
 const {
   // validateSignup,
   validateSignin,
+  validateForgotPassword,
+  validateResetPassword,
 } = require("../middlewares/validateRequests");
 const {
   // createUser,
@@ -19,7 +21,11 @@ router.post("/signup", (req, res) => {
 });
 router.post("/signin", validateSignin, login);
 router.delete("/signout", logout);
-router.put("/forgot-password", forgotPassword);
-router.put("/reset-password/:resetPasswordLink", resetPassword);
+router.put("/forgot-password", validateForgotPassword, forgotPassword);
+router.put(
+  "/reset-password/:resetPasswordLink",
+  validateResetPassword,
+  resetPassword
+);
 
 module.exports = router;
