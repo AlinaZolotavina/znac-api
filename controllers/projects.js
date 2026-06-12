@@ -1,6 +1,7 @@
 const Project = require("../models/project");
 const NotFoundError = require("../errors/not-found-err");
 // const { PHOTO_NOT_FOUND_ERROR_MSG, SUCCESSFUL_PHOTO_DELETE_MSG } = require('../utils/constants');
+const escapeRegex = require("../utils/escapeRegex");
 
 const getProjects = (req, res, next) => {
   Project.find({})
@@ -9,8 +10,17 @@ const getProjects = (req, res, next) => {
 };
 
 const findProject = (req, res, next) => {
-  const { keyWord } = req.body;
-  Project.find({ hashtags: { $regex: keyWord } })
+  const { keyWord = "" } = req.body;
+  const query = keyWord.trim()
+    ? {
+        hashtags: {
+          $regex: escapeRegex(keyWord.trim()),
+          $options: "i",
+        },
+      }
+    : {};
+
+  Project.find(query)
     .then((projects) => {
       res.send(projects);
     })
@@ -36,10 +46,11 @@ const deleteProject = (req, res, next) => {
     .catch(next);
 };
 
-const addProject = (req, res) => {
-  Project.create({ ...req.body, owner: req.user._id })
+const addProject = (req, res, next) => {
+  const { title, hashtags, text, link } = req.body;
+  Project.create({ owner: req.user._id, title, hashtags, text, link })
     .then((project) => res.status(201).send(project))
-    .catch((err) => console.log(err));
+    .catch(next);
 };
 
 const updateProject = (req, res, next) => {

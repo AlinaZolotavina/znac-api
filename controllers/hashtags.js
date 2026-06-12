@@ -39,7 +39,7 @@ const updateHashtag = (req, res, next) => {
       if (!hashtag) {
         return next(new NotFoundError("Hashtag not found"));
       }
-      return res.status(201).send(hashtag);
+      return res.status(200).send(hashtag);
     })
     .catch(next);
 };

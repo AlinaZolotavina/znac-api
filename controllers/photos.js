@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 const fs = require("fs");
 const Photo = require("../models/photo");
+const escapeRegex = require("../utils/escapeRegex");
 const NotFoundError = require("../errors/not-found-err");
 const {
   PHOTO_NOT_FOUND_ERROR_MSG,
@@ -14,8 +15,10 @@ const getPhotos = (req, res, next) => {
 };
 
 const findPhoto = (req, res, next) => {
-  const { keyWord } = req.body;
-  Photo.find({ hashtags: { $regex: keyWord } })
+  const { keyWord = "" } = req.body;
+  Photo.find({
+    hashtags: { $regex: escapeRegex(keyWord.trim()), $options: "i" },
+  })
     .then((photos) => {
       res.send(photos);
     })
@@ -57,10 +60,10 @@ const deletePhoto = (req, res, next) => {
     .catch(next);
 };
 
-const addPhoto = (req, res) => {
+const addPhoto = (req, res, next) => {
   Photo.create({ ...req.body, owner: req.user._id })
     .then((photo) => res.status(201).send(photo))
-    .catch((err) => console.log(err));
+    .catch(next);
 };
 
 const uploadPhoto = async (req, res, next) => {
@@ -81,14 +84,14 @@ const uploadPhoto = async (req, res, next) => {
       data: uploadedFiles,
     });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
 const increaseViews = (req, res, next) => {
   const { photoId } = req.params;
   let viewsCount;
-  Photo.findById(photoId)
+  Photo.findByIdAndUpdate(photoId, { $inc: { views: 1 } }, { new: true })
     .then((photo) => {
       if (!photo) {
         return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
@@ -96,7 +99,7 @@ const increaseViews = (req, res, next) => {
       viewsCount = photo.views + 1;
       return photo.updateOne({ views: viewsCount }).then(() => res.send(photo));
     })
-    .catch((err) => console.log(err));
+    .catch(next);
 };
 
 const editHashtags = (req, res, next) => {

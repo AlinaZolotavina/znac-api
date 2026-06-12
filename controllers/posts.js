@@ -2,6 +2,7 @@
 // const fs = require("fs");
 const Post = require("../models/post");
 const NotFoundError = require("../errors/not-found-err");
+const escapeRegex = require("../utils/escapeRegex");
 const {
   POST_NOT_FOUND_ERROR_MSG,
   SUCCESSFUL_POST_DELETE_MSG,
@@ -9,30 +10,40 @@ const {
 
 const getPosts = (req, res, next) => {
   Post.find({})
-    .then((posts) => res.status(200).send(posts))
+    .then((posts) => {
+      return res.status(200).send(posts);
+    })
     .catch(next);
 };
 
 const findPost = (req, res, next) => {
-  const { keyWord, selectedTheme } = req.body;
-  Post.find({
-    $or: [
-      { theme: { $regex: keyWord } },
-      { title: { $regex: keyWord } },
-      { text: { $regex: keyWord } },
-      { theme: selectedTheme },
-    ],
-  })
+  const { keyWord = "", selectedTheme } = req.body;
+  const conditions = [];
+
+  if (keyWord.trim()) {
+    const searchTerm = escapeRegex(keyWord.trim());
+
+    conditions.push(
+      { theme: { $regex: searchTerm, $options: "i" } },
+      { title: { $regex: searchTerm, $options: "i" } },
+      { text: { $regex: searchTerm, $options: "i" } }
+    );
+  }
+  if (selectedTheme) {
+    conditions.push({ theme: selectedTheme });
+  }
+
+  const query = conditions.length > 0 ? { $or: conditions } : {};
+
+  Post.find(query)
     .then((posts) => {
-      res.send(posts);
+      return res.send(posts);
     })
     .catch(next);
 };
 
 const deletePost = (req, res, next) => {
   const { postId } = req.params;
-  console.log("req.user =", req.user);
-  console.log("postId =", postId);
 
   Post.findOneAndDelete({
     _id: postId,
@@ -50,10 +61,10 @@ const deletePost = (req, res, next) => {
     .catch(next);
 };
 
-const addPost = (req, res) => {
+const addPost = (req, res, next) => {
   Post.create({ ...req.body, owner: req.user._id })
     .then((post) => res.status(201).send(post))
-    .catch((err) => console.log(err));
+    .catch(next);
 };
 
 const updatePost = (req, res, next) => {
