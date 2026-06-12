@@ -14,6 +14,8 @@ const {
   findProject,
   getProjectHashtags,
 } = require("../controllers/projects");
+const upload = require("../middlewares/upload");
+const validateUploadedFiles = require("../middlewares/validateUploadedFiles");
 
 const { validatePhotoRequest } = require("../middlewares/validateRequests");
 const auth = require("../middlewares/auth");
@@ -41,7 +43,12 @@ router.get("/projecthashtags", getProjectHashtags);
 
 router.use(authRouter);
 router.use(auth);
-router.post("/public", uploadPhoto);
+router.post(
+  "/public",
+  upload.array("file", 10),
+  validateUploadedFiles,
+  uploadPhoto
+);
 router.post("/hashtags", addHashtag);
 router.patch("/hashtags", updateHashtag);
 router.use(userRouter);

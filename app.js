@@ -1,9 +1,8 @@
 const express = require("express");
-const fileUpload = require("express-fileupload");
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config();
-const requiredEnv = ["JWT_SECRET", "DB_URL"];
+const requiredEnv = ["JWT_SECRET", "DB_URL", "CLIENT_URL"];
 
 requiredEnv.forEach((name) => {
   if (!process.env[name]) {
@@ -22,23 +21,18 @@ const { requestLogger, errorLogger } = require("./middlewares/logger");
 const rateLimiter = require("./middlewares/rateLimiter");
 
 const { PORT } = require("./utils/config");
-const { DB_URL } = process.env;
+const { DB_URL, CLIENT_URL } = process.env;
 
 const app = express();
 
 app.use(
-  fileUpload({
-    createParentPath: false,
-    uploadTimeout: 60000,
-    abortOnLimit: true,
-    limits: {
-      fileSize: 10 * 1024 * 1024, // 10 MB
-      files: 1,
-    },
+  "/public",
+  express.static(path.join(__dirname, "public"), {
+    index: false,
+    dotfiles: "deny",
+    redirect: false,
   })
 );
-
-app.use("/public", express.static(path.join(__dirname, "public")));
 
 app.use(cookieParser());
 
@@ -51,8 +45,7 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 app.use((req, res, next) => {
-  // res.setHeader('Access-Control-Allow-Origin', 'https://znac.org');
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.setHeader("Access-Control-Allow-Origin", CLIENT_URL);
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept"

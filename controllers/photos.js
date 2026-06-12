@@ -67,59 +67,15 @@ const addPhoto = (req, res) => {
 
 const uploadPhoto = async (req, res, next) => {
   try {
-    if (!req.files || !req.files.file) {
+    if (!req.files || req.files.length === 0) {
       return next(new NotFoundError("No photo to upload"));
     }
 
-    const MAX_FILES_COUNT = 10;
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-
-    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
-
-    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-
-    const files = Array.isArray(req.files.file)
-      ? req.files.file
-      : [req.files.file];
-
-    if (files.length > MAX_FILES_COUNT) {
-      return res.status(400).send({
-        message: `Maximum ${MAX_FILES_COUNT} files allowed`,
-      });
-    }
-
-    const uploadedFiles = [];
-
-    for (const file of files) {
-      if (file.size > MAX_FILE_SIZE) {
-        return res.status(400).send({
-          message: `File ${file.name} exceeds maximum size`,
-        });
-      }
-
-      const extension = path.extname(file.name).toLowerCase();
-
-      if (
-        !allowedMimeTypes.includes(file.mimetype) ||
-        !allowedExtensions.includes(extension)
-      ) {
-        return res.status(400).send({
-          message: `Unsupported file type: ${file.name}`,
-        });
-      }
-
-      const safeFileName = `${crypto.randomUUID()}${extension}`;
-
-      const uploadPath = path.join(__dirname, "../public", safeFileName);
-
-      await file.mv(uploadPath);
-
-      uploadedFiles.push({
-        name: safeFileName,
-        size: file.size,
-        path: `https://api.znac.org/public/${safeFileName}`,
-      });
-    }
+    const uploadedFiles = req.files.map((file) => ({
+      name: file.filename,
+      size: file.size,
+      path: `https://api.znac.org/public/${file.filename}`,
+    }));
 
     return res.status(201).send({
       status: true,
