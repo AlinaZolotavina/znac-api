@@ -16,6 +16,18 @@ const getPosts = (req, res, next) => {
     .catch(next);
 };
 
+const getPost = (req, res, next) => {
+  const { postId } = req.params;
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
+      }
+      res.send(post);
+    })
+    .catch(next);
+};
+
 const findPost = (req, res, next) => {
   const { keyWord = "", selectedTheme } = req.body;
   const tag = keyWord.trim().toLowerCase();
@@ -157,6 +169,7 @@ const uploadPostPhoto = (req, res, next) => {
 
 module.exports = {
   getPosts,
+  getPost,
   findPost,
   deletePost,
   addPost,
