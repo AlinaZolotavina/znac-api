@@ -17,13 +17,12 @@ const addHashtag = (req, res, next) => {
 
 // const deleteHashtag = (req, res, next) => {
 //   const { hashtagName } = req.body;
-//   Hashtag.findOne({ name: hashtagName })
+//   Hashtag.findOneAndDelete({ name: hashtagName })
 //     .then((hashtag) => {
 //       if (!hashtag) {
 //         return next(new NotFoundError('Hashtag not found'));
 //       }
-//       return hashtag.remove()
-//         .then(() => res.send({ message: 'Hashtag was deleted' }));
+//       res.send({ message: 'Hashtag was deleted' }));
 //     })
 //     .catch(next);
 // };

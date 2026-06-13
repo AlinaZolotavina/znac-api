@@ -20,4 +20,6 @@ const hashtagSchema = new mongoose.Schema({
   },
 });
 
+hashtagSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("hashtag", hashtagSchema);

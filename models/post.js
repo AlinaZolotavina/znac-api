@@ -31,12 +31,13 @@ const postSchema = new mongoose.Schema({
       message: IMAGE_BAD_URL_ERROR_MSG,
     },
   },
-  hashtags: {
-    type: String,
-    required: true,
-    minLength: 2,
-    maxlength: 500,
-  },
+  hashtags: [
+    {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+  ],
   text: {
     type: String,
     required: true,
@@ -48,5 +49,10 @@ const postSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+postSchema.index({ owner: 1 });
+postSchema.index({ theme: 1 });
+postSchema.index({ createdAt: -1 });
+postSchema.index({ hashtags: 1 });
 
 module.exports = mongoose.model("post", postSchema);

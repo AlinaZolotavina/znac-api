@@ -14,12 +14,13 @@ const projectSchema = new mongoose.Schema({
     minLength: 2,
     maxlength: 50,
   },
-  hashtags: {
-    type: String,
-    required: true,
-    minLength: 2,
-    maxlength: 500,
-  },
+  hashtags: [
+    {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+  ],
   text: {
     type: String,
     required: true,
@@ -41,5 +42,9 @@ const projectSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+projectSchema.index({ owner: 1 });
+projectSchema.index({ createdAt: -1 });
+projectSchema.index({ hashtags: 1 });
 
 module.exports = mongoose.model("project", projectSchema);

@@ -18,6 +18,7 @@ const getPosts = (req, res, next) => {
 
 const findPost = (req, res, next) => {
   const { keyWord = "", selectedTheme } = req.body;
+  const tag = keyWord.trim().toLowerCase();
   const conditions = [];
 
   if (keyWord.trim()) {
@@ -26,7 +27,8 @@ const findPost = (req, res, next) => {
     conditions.push(
       { theme: { $regex: searchTerm, $options: "i" } },
       { title: { $regex: searchTerm, $options: "i" } },
-      { text: { $regex: searchTerm, $options: "i" } }
+      { text: { $regex: searchTerm, $options: "i" } },
+      { hashtags: tag }
     );
   }
   if (selectedTheme) {
@@ -62,7 +64,17 @@ const deletePost = (req, res, next) => {
 };
 
 const addPost = (req, res, next) => {
-  Post.create({ ...req.body, owner: req.user._id })
+  const { theme, icon, title, photoLink, hashtags, text } = req.body;
+  const hashtagsArray = hashtags.trim().toLowerCase().split(/\s+/);
+  Post.create({
+    owner: req.user._id,
+    theme,
+    icon,
+    title,
+    photoLink,
+    hashtags: hashtagsArray,
+    text,
+  })
     .then((post) => res.status(201).send(post))
     .catch(next);
 };

@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 const fs = require("fs");
 const Photo = require("../models/photo");
-const escapeRegex = require("../utils/escapeRegex");
 const NotFoundError = require("../errors/not-found-err");
 const {
   PHOTO_NOT_FOUND_ERROR_MSG,
@@ -15,10 +14,8 @@ const getPhotos = (req, res, next) => {
 };
 
 const findPhoto = (req, res, next) => {
-  const { keyWord = "" } = req.body;
-  Photo.find({
-    hashtags: { $regex: escapeRegex(keyWord.trim()), $options: "i" },
-  })
+  const tag = req.body.keyWord?.trim().toLowerCase();
+  Photo.find(tag ? { hashtags: tag } : {})
     .then((photos) => {
       res.send(photos);
     })
@@ -61,7 +58,9 @@ const deletePhoto = (req, res, next) => {
 };
 
 const addPhoto = (req, res, next) => {
-  Photo.create({ ...req.body, owner: req.user._id })
+  const { link, hashtags, views } = req.body;
+  const hashtagsArray = hashtags.trim().toLowerCase().split(/\s+/);
+  Photo.create({ owner: req.user._id, link, hashtags: hashtagsArray, views })
     .then((photo) => res.status(201).send(photo))
     .catch(next);
 };

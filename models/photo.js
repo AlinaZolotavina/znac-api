@@ -18,12 +18,13 @@ const photoSchema = new mongoose.Schema({
     ref: "user",
     required: true,
   },
-  hashtags: {
-    type: String,
-    required: true,
-    minLength: 2,
-    maxlength: 500,
-  },
+  hashtags: [
+    {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+  ],
   views: {
     type: Number,
     required: true,
@@ -33,5 +34,9 @@ const photoSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+photoSchema.index({ owner: 1 });
+photoSchema.index({ createdAt: -1 });
+photoSchema.index({ hashtags: 1 });
 
 module.exports = mongoose.model("photo", photoSchema);
