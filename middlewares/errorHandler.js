@@ -29,6 +29,7 @@ const errorHandler = (err, req, res) => {
   const { statusCode = 500, message } = err;
 
   return res.status(statusCode).send({
+    code: err.code || "INTERNAL_SERVER_ERROR",
     message: statusCode === 500 ? INTERNAL_SERVER_ERROR : message,
   });
 };
