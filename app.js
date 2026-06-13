@@ -39,11 +39,6 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-mongoose
-  .connect(DB_URL)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
-
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", CLIENT_URL);
   res.setHeader(
@@ -76,7 +71,43 @@ app.use(errors());
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`app listening on port ${PORT}`);
-});
+let server;
+
+const start = async () => {
+  try {
+    await mongoose.connect(DB_URL);
+
+    console.log("MongoDB connected");
+
+    server = app.listen(PORT, () => {
+      console.log(`app listening on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  }
+};
+
+const shutdown = async () => {
+  console.log("Shutting down server...");
+
+  try {
+    await mongoose.connection.close();
+  } catch (err) {
+    console.error(err);
+  }
+
+  if (server) {
+    server.close(() => {
+      console.log("Server closed");
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
+start();

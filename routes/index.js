@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const mongoose = require("mongoose");
 const { getPhotos, findPhoto, uploadPhoto } = require("../controllers/photos");
 const {
   getHashtags,
@@ -29,6 +30,21 @@ const postRouter = require("./posts");
 const projectRouter = require("./projects");
 const NotFoundError = require("../errors/not-found-err");
 const { NOT_FOUND_ERROR_MSG } = require("../utils/constants");
+
+router.get("/health", (req, res) => {
+  res.status(200).send({
+    status: "ok",
+  });
+});
+
+router.get("/ready", (req, res) => {
+  const isReady = mongoose.connection.readyState === 1;
+
+  return res.status(isReady ? 200 : 503).send({
+    status: isReady ? "ready" : "not ready",
+    mongoState: mongoose.connection.readyState,
+  });
+});
 
 router.get("/photos", getPhotos);
 router.post("/photos/found", validateSearch, findPhoto);
