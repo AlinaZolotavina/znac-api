@@ -1,5 +1,5 @@
 const {
-  NODEMAILER_SERVISE,
+  NODEMAILER_SERVICE,
   NODEMAILER_HOST,
   NODEMAILER_USER,
   NODEMAILER_PASSWORD,
@@ -10,7 +10,7 @@ const {
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: NODEMAILER_SERVISE,
+  service: NODEMAILER_SERVICE,
   host: NODEMAILER_HOST,
   auth: {
     user: NODEMAILER_USER,

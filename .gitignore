@@ -17,3 +17,6 @@ test-jwt.js
 .DS_Store
 .idea
 .vscode
+
+# Audit
+AUDIT.md

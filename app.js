@@ -20,8 +20,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
 const rateLimiter = require("./middlewares/rateLimiter");
 
-const { PORT } = require("./utils/config");
-const { DB_URL, CLIENT_URL } = process.env;
+const { PORT, DB_URL, CLIENT_URL } = process.env;
 
 const app = express();
 

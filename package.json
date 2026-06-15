@@ -10,6 +10,9 @@
   "keywords": [],
   "author": "Alina Zolotavina <abekmetova@yandex.ru>",
   "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "celebrate": "^15.0.1",

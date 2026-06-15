@@ -8,7 +8,7 @@ Developed independently, including API design, database modeling, authentication
 
 ## Related Repository
 
-Frontend application: [ZNAC](https://github.com/AlinaZolotavina/znac)
+Frontend application: https://github.com/AlinaZolotavina/znac
 
 ## Features
 
@@ -55,6 +55,55 @@ Frontend application: [ZNAC](https://github.com/AlinaZolotavina/znac)
 
 **_Development Tools:_** ESLint, nodemon, dotenv
 
+## Requirements
+
+- Node.js 22.x
+- MongoDB 8+
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/AlinaZolotavina/znac-api.git
+cd znac-api
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create an environment file:
+
+```bash
+cp .env.example .env
+```
+
+Fill in the required environment variables before starting the application.
+
+## Running the Application
+
+Start in development mode:
+
+```bash
+npm run dev
+```
+
+Start in production mode:
+
+```bash
+npm start
+```
+
+## Health Checks
+
+```text
+GET /health
+GET /ready
+```
+
 ## Deployment
 
 The API is deployed on AWS Lightsail and runs behind Nginx.
@@ -65,6 +114,80 @@ Deployment setup includes:
 - Reverse proxy with Nginx
 - Environment-based configuration
 - SSL-secured communication
+
+## PM2
+
+Start application:
+
+```bash
+pm2 start ecosystem.config.js
+```
+
+Restart application:
+
+```bash
+pm2 restart app
+```
+
+Save PM2 configuration:
+
+```bash
+pm2 save
+```
+
+## Backup Procedure
+
+Create a MongoDB backup:
+
+```bash
+mongodump --uri="$DB_URL" --out ./backup
+```
+
+The command creates a backup of all MongoDB collections in the `backup` directory.
+
+It is recommended to create backups before major releases and database migrations.
+
+## Restore Procedure
+
+Restore the database from a backup:
+
+```bash
+mongorestore --uri="$DB_URL" ./backup
+```
+
+This command restores the database from a previously created backup.
+
+Always test restoration on a staging environment before restoring production data.
+
+## Rollback Procedure
+
+If a deployment fails:
+
+1. Connect to the server.
+2. Checkout the previous stable commit:
+
+```bash
+git checkout <commit-hash>
+```
+
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Restart the application:
+
+```bash
+pm2 restart app
+```
+
+5. Verify application health:
+
+```bash
+curl https://api.znac.org/health
+curl https://api.znac.org/ready
+```
 
 ## Future Improvements
 
