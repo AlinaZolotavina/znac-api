@@ -1,25 +1,67 @@
 /* eslint-disable no-console */
 const fs = require("fs");
 const Photo = require("../models/photo");
+const getPagination = require("../utils/pagination");
 const NotFoundError = require("../errors/not-found-err");
+const escapeRegex = require("../utils/escapeRegex");
+const normalizeHashtags = require("../utils/normalizeHashtags");
 const {
   PHOTO_NOT_FOUND_ERROR_MSG,
   SUCCESSFUL_PHOTO_DELETE_MSG,
 } = require("../utils/constants");
 
-const getPhotos = (req, res, next) => {
-  Photo.find({})
-    .then((photos) => res.status(200).send(photos))
-    .catch(next);
+const getPhotos = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req);
+
+    const [photos, total] = await Promise.all([
+      Photo.find({}).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
+      Photo.countDocuments(),
+    ]);
+    res.status(200).send({
+      data: photos,
+      page,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
-const findPhoto = (req, res, next) => {
-  const tag = req.body.keyWord?.trim().toLowerCase();
-  Photo.find(tag ? { hashtags: tag } : {})
-    .then((photos) => {
-      res.send(photos);
-    })
-    .catch(next);
+const findPhoto = async (req, res, next) => {
+  try {
+    const tag = req.body.keyWord?.trim();
+    const { page, limit, skip } = getPagination(req);
+
+    const filter = tag
+      ? {
+          hashtags: {
+            $regex: `(^|\\s)${escapeRegex(tag)}(?=\\s|$)`,
+            $options: "i",
+          },
+        }
+      : {};
+
+    const [photos, total] = await Promise.all([
+      Photo.find(filter)
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit),
+      Photo.countDocuments(filter),
+    ]);
+
+    res.status(200).send({
+      data: photos,
+      page,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const deletePhoto = (req, res, next) => {
@@ -59,7 +101,7 @@ const deletePhoto = (req, res, next) => {
 
 const addPhoto = (req, res, next) => {
   const { link, hashtags, views } = req.body;
-  const hashtagsArray = hashtags.trim().toLowerCase().split(/\s+/);
+  const hashtagsArray = normalizeHashtags(hashtags);
   Photo.create({ owner: req.user._id, link, hashtags: hashtagsArray, views })
     .then((photo) => res.status(201).send(photo))
     .catch(next);
@@ -109,7 +151,7 @@ const editHashtags = (req, res, next) => {
       owner: req.user._id,
     },
     {
-      hashtags: newHashtags,
+      hashtags: normalizeHashtags(newHashtags),
     },
     {
       new: true,

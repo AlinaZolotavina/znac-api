@@ -1,23 +1,43 @@
 const Project = require("../models/project");
+const getPagination = require("../utils/pagination");
 const NotFoundError = require("../errors/not-found-err");
+const escapeRegex = require("../utils/escapeRegex");
+const normalizeHashtags = require("../utils/normalizeHashtags");
 // const { PHOTO_NOT_FOUND_ERROR_MSG, SUCCESSFUL_PHOTO_DELETE_MSG } = require('../utils/constants');
 
-const getProjects = (req, res, next) => {
-  Project.find({})
-    .then((projects) => res.status(200).send(projects))
-    .catch(next);
-};
+const getProjects = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req);
+    const tag = req.query.hashtag?.trim();
 
-const findProject = (req, res, next) => {
-  const tag = req.body.keyWord?.trim().toLowerCase();
+    const filter = tag
+      ? {
+          hashtags: {
+            $regex: `(^|\\s)${escapeRegex(tag)}(?=\\s|$)`,
+            $options: "i",
+          },
+        }
+      : {};
 
-  const query = tag ? { hashtags: tag } : {};
+    const [projects, total] = await Promise.all([
+      Project.find(filter)
 
-  Project.find(query)
-    .then((projects) => {
-      res.send(projects);
-    })
-    .catch(next);
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit),
+      Project.countDocuments(filter),
+    ]);
+
+    res.status(200).send({
+      data: projects,
+      page,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const deleteProject = (req, res, next) => {
@@ -41,7 +61,7 @@ const deleteProject = (req, res, next) => {
 
 const addProject = (req, res, next) => {
   const { title, hashtags, text, link } = req.body;
-  const hashtagsArray = hashtags.trim().toLowerCase().split(/\s+/);
+  const hashtagsArray = normalizeHashtags(hashtags);
   Project.create({
     owner: req.user._id,
     title,
@@ -64,7 +84,7 @@ const updateProject = (req, res, next) => {
     },
     {
       title: newTitle,
-      hashtags: newHashtags,
+      hashtags: normalizeHashtags(newHashtags),
       text: newText,
       link: newLink,
     },
@@ -96,21 +116,54 @@ const updateProject = (req, res, next) => {
 //   .catch(next);
 // }
 
-const getProjectHashtags = (req, res, next) => {
-  Project.find({})
-    .then((projects) => {
-      let hashtags = "";
-      projects.forEach((project) => {
-        hashtags = hashtags + project.hashtags.toLowerCase() + " ";
-      });
-      res.send(hashtags.trim().split(" "));
-    })
-    .catch(next);
+const getProjectHashtags = async (req, res, next) => {
+  try {
+    const requestedLimit = Number(req.query.limit);
+
+    const limit = Math.min(
+      Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 20, 1),
+      100
+    );
+
+    const hashtags = await Project.aggregate([
+      { $unwind: "$hashtags" },
+
+      // У тебя hashtags хранятся строкой:
+      // "backend js node.js express mongodb"
+      { $project: { tags: { $split: ["$hashtags", " "] } } },
+      { $unwind: "$tags" },
+
+      { $match: { tags: { $ne: "" } } },
+
+      {
+        $group: {
+          _id: { $toLower: "$tags" },
+          count: { $sum: 1 },
+        },
+      },
+
+      { $sort: { count: -1, _id: 1 } },
+
+      // Ограничиваем результат уже после подсчёта и сортировки.
+      { $limit: limit },
+
+      {
+        $project: {
+          _id: 0,
+          name: "$_id",
+          count: 1,
+        },
+      },
+    ]);
+
+    res.status(200).send(hashtags.map((item) => item.name));
+  } catch (err) {
+    next(err);
+  }
 };
 
 module.exports = {
   getProjects,
-  findProject,
   deleteProject,
   addProject,
   updateProject,

@@ -1,19 +1,54 @@
 /* eslint-disable no-console */
 // const fs = require("fs");
 const Post = require("../models/post");
+const getPagination = require("../utils/pagination");
 const NotFoundError = require("../errors/not-found-err");
 const escapeRegex = require("../utils/escapeRegex");
+const normalizeHashtags = require("../utils/normalizeHashtags");
 const {
   POST_NOT_FOUND_ERROR_MSG,
   SUCCESSFUL_POST_DELETE_MSG,
 } = require("../utils/constants");
 
-const getPosts = (req, res, next) => {
-  Post.find({})
-    .then((posts) => {
-      return res.status(200).send(posts);
-    })
-    .catch(next);
+const getPosts = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req);
+    const { search = "", theme = "" } = req.query;
+    const filters = [];
+
+    if (theme && theme !== "All") {
+      filters.push({ theme });
+    }
+
+    if (search.trim()) {
+      const searchTerm = escapeRegex(search.trim());
+
+      filters.push({
+        $or: [
+          { theme: { $regex: searchTerm, $options: "i" } },
+          { title: { $regex: searchTerm, $options: "i" } },
+          { text: { $regex: searchTerm, $options: "i" } },
+          { hashtags: search.trim().toLowerCase() },
+        ],
+      });
+    }
+
+    const query = filters.length > 0 ? { $and: filters } : {};
+
+    const [posts, total] = await Promise.all([
+      Post.find(query).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
+      Post.countDocuments(query),
+    ]);
+    return res.status(200).send({
+      data: posts,
+      page,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const getPost = (req, res, next) => {
@@ -24,34 +59,6 @@ const getPost = (req, res, next) => {
         throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
       }
       res.send(post);
-    })
-    .catch(next);
-};
-
-const findPost = (req, res, next) => {
-  const { keyWord = "", selectedTheme } = req.body;
-  const tag = keyWord.trim().toLowerCase();
-  const conditions = [];
-
-  if (keyWord.trim()) {
-    const searchTerm = escapeRegex(keyWord.trim());
-
-    conditions.push(
-      { theme: { $regex: searchTerm, $options: "i" } },
-      { title: { $regex: searchTerm, $options: "i" } },
-      { text: { $regex: searchTerm, $options: "i" } },
-      { hashtags: tag }
-    );
-  }
-  if (selectedTheme) {
-    conditions.push({ theme: selectedTheme });
-  }
-
-  const query = conditions.length > 0 ? { $or: conditions } : {};
-
-  Post.find(query)
-    .then((posts) => {
-      return res.send(posts);
     })
     .catch(next);
 };
@@ -77,7 +84,7 @@ const deletePost = (req, res, next) => {
 
 const addPost = (req, res, next) => {
   const { theme, icon, title, photoLink, hashtags, text } = req.body;
-  const hashtagsArray = hashtags.trim().toLowerCase().split(/\s+/);
+  const hashtagsArray = normalizeHashtags(hashtags);
   Post.create({
     owner: req.user._id,
     theme,
@@ -100,7 +107,7 @@ const updatePost = (req, res, next) => {
     theme: newTheme,
     icon: newIcon,
     title: newTitle,
-    hashtags: newHashtags,
+    hashtags: normalizeHashtags(newHashtags),
     text: newText,
   };
 
@@ -170,7 +177,6 @@ const uploadPostPhoto = (req, res, next) => {
 module.exports = {
   getPosts,
   getPost,
-  findPost,
   deletePost,
   addPost,
   updatePost,

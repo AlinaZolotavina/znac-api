@@ -8,13 +8,8 @@ const {
   updateHashtag,
 } = require("../controllers/hashtags");
 const { increaseViews } = require("../controllers/photos");
-const { getPosts, getPost, findPost } = require("../controllers/posts");
-const {
-  getProjects,
-  // getProject,
-  findProject,
-  getProjectHashtags,
-} = require("../controllers/projects");
+const { getPosts, getPost } = require("../controllers/posts");
+const { getProjects, getProjectHashtags } = require("../controllers/projects");
 const upload = require("../middlewares/upload");
 const validateUploadedFiles = require("../middlewares/validateUploadedFiles");
 
@@ -55,11 +50,9 @@ router.get("/hashtags", getHashtags);
 
 router.get("/posts", getPosts);
 router.get("/posts/:postId", validatePostRequest, getPost);
-router.post("/posts/found", validateSearch, findPost);
 // router.delete('/hashtags', deleteHashtag);
 
 router.get("/projects", getProjects);
-router.post("/projects/found", validateSearch, findProject);
 router.get("/projecthashtags", getProjectHashtags);
 
 router.use(authRouter);

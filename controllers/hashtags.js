@@ -1,36 +1,40 @@
+const getPagination = require("../utils/pagination");
+const normalizeHashtagName = require("../utils/normalizeHashtagName");
 const NotFoundError = require("../errors/not-found-err");
 const Hashtag = require("../models/hashtag");
 
-const getHashtags = (req, res, next) => {
-  Hashtag.find({})
-    .sort({ createdAt: "desc" })
-    .then((hashtags) => res.status(200).send(hashtags))
-    .catch(next);
+const getHashtags = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req);
+    const [hashtags, total] = await Promise.all([
+      Hashtag.find({}).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
+      Hashtag.countDocuments(),
+    ]);
+    res.status(200).send({
+      data: hashtags,
+      page,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const addHashtag = (req, res, next) => {
-  const { newHashtag } = req.body;
-  Hashtag.create({ name: newHashtag })
-    .then((h) => res.status(201).send(h))
+  const name = normalizeHashtagName(req.body.newHashtag);
+
+  Hashtag.create({ name })
+    .then((hashtag) => res.status(201).send(hashtag))
     .catch(next);
 };
 
-// const deleteHashtag = (req, res, next) => {
-//   const { hashtagName } = req.body;
-//   Hashtag.findOneAndDelete({ name: hashtagName })
-//     .then((hashtag) => {
-//       if (!hashtag) {
-//         return next(new NotFoundError('Hashtag not found'));
-//       }
-//       res.send({ message: 'Hashtag was deleted' }));
-//     })
-//     .catch(next);
-// };
-
 const updateHashtag = (req, res, next) => {
-  const { hashtagName } = req.body;
+  const name = normalizeHashtagName(req.body.hashtagName);
+
   Hashtag.findOneAndUpdate(
-    { name: hashtagName },
+    { name },
     { createdAt: Date.now() },
     { returnDocument: "after" }
   )
@@ -38,6 +42,7 @@ const updateHashtag = (req, res, next) => {
       if (!hashtag) {
         return next(new NotFoundError("Hashtag not found"));
       }
+
       return res.status(200).send(hashtag);
     })
     .catch(next);
@@ -46,6 +51,5 @@ const updateHashtag = (req, res, next) => {
 module.exports = {
   getHashtags,
   addHashtag,
-  // deleteHashtag,
   updateHashtag,
 };
