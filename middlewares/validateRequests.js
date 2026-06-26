@@ -143,6 +143,19 @@ const validateSearch = celebrate({
   }),
 });
 
+const validateContactMessage = celebrate({
+  body: Joi.object().keys({
+    name: Joi.string()
+      .trim()
+      .min(2)
+      .max(80)
+      .pattern(/^[A-Za-zА-Яа-яЁё -]+$/)
+      .required(),
+    email: Joi.string().trim().lowercase().email().max(254).required(),
+    message: Joi.string().trim().min(1).max(3000).required(),
+  }),
+});
+
 module.exports = {
   validateSignup,
   validateSignin,
@@ -160,4 +173,5 @@ module.exports = {
   validateAddProject,
   validateUpdateProject,
   validateSearch,
+  validateContactMessage,
 };

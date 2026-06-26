@@ -6,4 +6,15 @@ const rateLimiter = rateLimit({
   message: "There are too many requests! Serever is tired :(",
 });
 
-module.exports = rateLimiter;
+const contactRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    message: "Too many messages. Please try again later.",
+  },
+});
+
+module.exports = {
+  rateLimiter,
+  contactRateLimiter,
+};

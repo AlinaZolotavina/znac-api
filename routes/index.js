@@ -4,19 +4,20 @@ const { getPhotos, findPhoto, uploadPhoto } = require("../controllers/photos");
 const {
   getHashtags,
   addHashtag,
-  // deleteHashtag,
   updateHashtag,
 } = require("../controllers/hashtags");
 const { increaseViews } = require("../controllers/photos");
 const { getPosts, getPost } = require("../controllers/posts");
 const { getProjects, getProjectHashtags } = require("../controllers/projects");
+const { contactRateLimiter } = require("../middlewares/rateLimiter");
+const { sendContactMessage } = require("../controllers/contact");
 const upload = require("../middlewares/upload");
 const validateUploadedFiles = require("../middlewares/validateUploadedFiles");
-
 const {
   validatePhotoRequest,
   validatePostRequest,
   validateSearch,
+  validateContactMessage,
 } = require("../middlewares/validateRequests");
 const auth = require("../middlewares/auth");
 const authRouter = require("./auth");
@@ -54,6 +55,13 @@ router.get("/posts/:postId", validatePostRequest, getPost);
 
 router.get("/projects", getProjects);
 router.get("/projecthashtags", getProjectHashtags);
+
+router.post(
+  "/contact",
+  contactRateLimiter,
+  validateContactMessage,
+  sendContactMessage
+);
 
 router.use(authRouter);
 router.use(auth);

@@ -18,7 +18,7 @@ const helmet = require("helmet");
 const router = require("./routes");
 const errorHandler = require("./middlewares/errorHandler");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
-const rateLimiter = require("./middlewares/rateLimiter");
+const { rateLimiter } = require("./middlewares/rateLimiter");
 
 const { PORT, DB_URL, CLIENT_URL } = process.env;
 
