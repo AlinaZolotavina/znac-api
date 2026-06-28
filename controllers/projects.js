@@ -128,7 +128,7 @@ const getProjectHashtags = async (req, res, next) => {
     const hashtags = await Project.aggregate([
       { $unwind: "$hashtags" },
 
-      // У тебя hashtags хранятся строкой:
+      // ранее hashtags хранились строкой:
       // "backend js node.js express mongodb"
       { $project: { tags: { $split: ["$hashtags", " "] } } },
       { $unwind: "$tags" },

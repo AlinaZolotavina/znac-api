@@ -1,5 +1,6 @@
 const INTERNAL_SERVER_ERROR = "Internal Server Error";
 const NOT_FOUND_ERROR_MSG = "The server can not find the requested resource";
+const FORBIDDEN_ORIGIN_ERROR_MSG = "Forbidden origin";
 const USER_NOT_FOUND_ERROR_MSG = "User is not found";
 const PHOTO_NOT_FOUND_ERROR_MSG = "Photo is not found";
 const POST_NOT_FOUND_ERROR_MSG = "Post is not found";
@@ -43,6 +44,7 @@ const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 module.exports = {
   INTERNAL_SERVER_ERROR,
   NOT_FOUND_ERROR_MSG,
+  FORBIDDEN_ORIGIN_ERROR_MSG,
   USER_NOT_FOUND_ERROR_MSG,
   PHOTO_NOT_FOUND_ERROR_MSG,
   POST_NOT_FOUND_ERROR_MSG,
