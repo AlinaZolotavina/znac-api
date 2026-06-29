@@ -1,46 +1,22 @@
 /* eslint-disable no-console */
-// const fs = require("fs");
-const Post = require("../models/post");
+const postService = require("../services/postService");
 const getPagination = require("../utils/pagination");
 const NotFoundError = require("../errors/not-found-err");
-const escapeRegex = require("../utils/escapeRegex");
-const normalizeHashtags = require("../utils/normalizeHashtags");
-const {
-  POST_NOT_FOUND_ERROR_MSG,
-  SUCCESSFUL_POST_DELETE_MSG,
-} = require("../utils/constants");
+const { SUCCESSFUL_POST_DELETE_MSG } = require("../utils/constants");
 
 const getPosts = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req);
-    const { search = "", theme = "" } = req.query;
-    const filters = [];
 
-    if (theme && theme !== "All") {
-      filters.push({ theme });
-    }
+    const { data, total } = await postService.getPosts({
+      skip,
+      limit,
+      search: req.query.search,
+      theme: req.query.theme,
+    });
 
-    if (search.trim()) {
-      const searchTerm = escapeRegex(search.trim());
-
-      filters.push({
-        $or: [
-          { theme: { $regex: searchTerm, $options: "i" } },
-          { title: { $regex: searchTerm, $options: "i" } },
-          { text: { $regex: searchTerm, $options: "i" } },
-          { hashtags: search.trim().toLowerCase() },
-        ],
-      });
-    }
-
-    const query = filters.length > 0 ? { $and: filters } : {};
-
-    const [posts, total] = await Promise.all([
-      Post.find(query).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
-      Post.countDocuments(query),
-    ]);
-    return res.status(200).send({
-      data: posts,
+    res.status(200).send({
+      data,
       page,
       limit,
       total,
@@ -52,90 +28,44 @@ const getPosts = async (req, res, next) => {
 };
 
 const getPost = (req, res, next) => {
-  const { postId } = req.params;
-  Post.findById(postId)
-    .then((post) => {
-      if (!post) {
-        throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
-      }
-      res.send(post);
-    })
+  postService
+    .getPost(req.params.postId)
+    .then((post) => res.send(post))
     .catch(next);
 };
 
 const deletePost = (req, res, next) => {
-  const { postId } = req.params;
-
-  Post.findOneAndDelete({
-    _id: postId,
-    owner: req.user._id,
-  })
-    .then((post) => {
-      if (!post) {
-        throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
-      }
-
+  postService
+    .deletePost({
+      ownerId: req.user._id,
+      postId: req.params.postId,
+    })
+    .then(() =>
       res.status(200).send({
         message: SUCCESSFUL_POST_DELETE_MSG,
-      });
-    })
+      })
+    )
     .catch(next);
 };
 
 const addPost = (req, res, next) => {
-  const { theme, icon, title, photoLink, hashtags, text } = req.body;
-  const hashtagsArray = normalizeHashtags(hashtags);
-  Post.create({
-    owner: req.user._id,
-    theme,
-    icon,
-    title,
-    photoLink,
-    hashtags: hashtagsArray,
-    text,
-  })
+  postService
+    .addPost({
+      ownerId: req.user._id,
+      ...req.body,
+    })
     .then((post) => res.status(201).send(post))
     .catch(next);
 };
 
 const updatePost = (req, res, next) => {
-  const { postId } = req.params;
-  const { newTheme, newIcon, newTitle, newPhotoLink, newHashtags, newText } =
-    req.body;
-
-  const updateData = {
-    theme: newTheme,
-    icon: newIcon,
-    title: newTitle,
-    hashtags: normalizeHashtags(newHashtags),
-    text: newText,
-  };
-
-  const updateQuery = newPhotoLink
-    ? { ...updateData, photoLink: newPhotoLink }
-    : {
-        $set: updateData,
-        $unset: { photoLink: 1 },
-      };
-
-  Post.findOneAndUpdate(
-    {
-      _id: postId,
-      owner: req.user._id,
-    },
-    updateQuery,
-    {
-      new: true,
-      runValidators: true,
-    }
-  )
-    .then((post) => {
-      if (!post) {
-        throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
-      }
-
-      res.status(200).send(post);
+  postService
+    .updatePost({
+      ownerId: req.user._id,
+      postId: req.params.postId,
+      ...req.body,
     })
+    .then((post) => res.send(post))
     .catch(next);
 };
 
@@ -161,19 +91,6 @@ const uploadPostPhoto = (req, res, next) => {
     .catch(next);
 };
 
-// const editHashtags = (req, res, next) => {
-//   const { photoId } = req.params;
-//   const { newHashtags } = req.body;
-//   Photo.findByIdAndUpdate(photoId, { hashtags: newHashtags }, { new: true, runValidators: true })
-//     .then((photo) => {
-//       if (!photo) {
-//         return next(new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG));
-//       }
-//       return res.send(photo);
-//     })
-//     .catch(next);
-// };
-
 module.exports = {
   getPosts,
   getPost,
@@ -181,5 +98,4 @@ module.exports = {
   addPost,
   updatePost,
   uploadPostPhoto,
-  //   editHashtags,
 };
