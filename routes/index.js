@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const mongoose = require("mongoose");
-const { getPhotos, findPhoto, uploadPhoto } = require("../controllers/photos");
+const { getPhotos, findPhoto } = require("../controllers/photos");
+const { uploadPhoto } = require("../controllers/upload");
 const {
   getHashtags,
   addHashtag,
