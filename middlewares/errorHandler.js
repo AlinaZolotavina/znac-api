@@ -1,7 +1,7 @@
 const multer = require("multer");
 const { INTERNAL_SERVER_ERROR } = require("../utils/constants");
 
-const errorHandler = (err, req, res) => {
+const errorHandler = (err, req, res, _next) => {
   if (err instanceof multer.MulterError) {
     switch (err.code) {
       case "LIMIT_FILE_SIZE":
