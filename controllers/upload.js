@@ -1,4 +1,4 @@
-const NotFoundError = require("../errors/not-found-err");
+const BadRequestError = require("../errors/bad-request-err");
 const uploadService = require("../services/uploadService");
 
 const { NO_PHOTO_TO_UPLOAD_ERROR_MSG } = require("../utils/constants");
@@ -6,7 +6,7 @@ const { NO_PHOTO_TO_UPLOAD_ERROR_MSG } = require("../utils/constants");
 const uploadPhoto = (req, res, next) => {
   try {
     if (!req.files?.length) {
-      throw new NotFoundError(NO_PHOTO_TO_UPLOAD_ERROR_MSG);
+      throw new BadRequestError(NO_PHOTO_TO_UPLOAD_ERROR_MSG);
     }
 
     res.status(201).send({

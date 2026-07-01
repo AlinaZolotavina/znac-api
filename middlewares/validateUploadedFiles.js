@@ -1,11 +1,7 @@
 const fs = require("fs/promises");
+const FileType = require("file-type");
 
-// динамический импорт для актуальных версий file-type
-const getFileType = async (filePath) => {
-  const { fileTypeFromFile } = await import("file-type");
-
-  return fileTypeFromFile(filePath);
-};
+const getFileType = (filePath) => FileType.fromFile(filePath);
 
 const validateUploadedFiles = async (req, res, next) => {
   try {

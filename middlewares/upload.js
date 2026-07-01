@@ -2,6 +2,8 @@ const multer = require("multer");
 const crypto = require("crypto");
 const path = require("path");
 
+const BadRequestError = require("../errors/bad-request-err");
+
 const storage = multer.diskStorage({
   destination(req, file, cb) {
     cb(null, path.join(__dirname, "../public"));
@@ -28,7 +30,9 @@ const upload = multer({
     const extension = path.extname(file.originalname).toLowerCase();
 
     if (!allowedExtensions.includes(extension)) {
-      return cb(new Error(`Unsupported file type: ${file.originalname}`));
+      return cb(
+        new BadRequestError(`Unsupported file type: ${file.originalname}`)
+      );
     }
 
     cb(null, true);

@@ -45,6 +45,7 @@ const WARNING_UPDATE_EMAIL_SUBJECT =
 const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 
 const VALIDATION_ERROR_MSG = "Validation failed";
+const NO_PHOTO_TO_UPLOAD_ERROR_MSG = "No photo to upload";
 
 module.exports = {
   INTERNAL_SERVER_ERROR,
@@ -86,4 +87,5 @@ module.exports = {
   WARNING_UPDATE_EMAIL_SUBJECT,
   WARNING_UPDATE_EMAIL_TEXT,
   VALIDATION_ERROR_MSG,
+  NO_PHOTO_TO_UPLOAD_ERROR_MSG,
 };
