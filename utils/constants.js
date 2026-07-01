@@ -44,6 +44,8 @@ const WARNING_UPDATE_EMAIL_SUBJECT =
   "Your email will be using on the www.znac.org";
 const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 
+const VALIDATION_ERROR_MSG = "Validation failed";
+
 module.exports = {
   INTERNAL_SERVER_ERROR,
   NOT_FOUND_ERROR_MSG,
@@ -83,4 +85,5 @@ module.exports = {
   RESET_PASSWORD_TEXT,
   WARNING_UPDATE_EMAIL_SUBJECT,
   WARNING_UPDATE_EMAIL_TEXT,
+  VALIDATION_ERROR_MSG,
 };

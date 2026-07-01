@@ -5,9 +5,13 @@ const normalizeHashtags = (hashtags) => {
 
   const values = Array.isArray(hashtags) ? hashtags : [hashtags];
 
-  return values
-    .flatMap((item) => String(item).trim().toLowerCase().split(/\s+/))
-    .filter(Boolean);
+  return [
+    ...new Set(
+      values
+        .flatMap((item) => String(item).trim().toLowerCase().split(/\s+/))
+        .filter(Boolean)
+    ),
+  ];
 };
 
 module.exports = normalizeHashtags;
