@@ -2,6 +2,7 @@ const Project = require("../models/project");
 const NotFoundError = require("../errors/not-found-err");
 const escapeRegex = require("../utils/escapeRegex");
 const normalizeHashtags = require("../utils/normalizeHashtags");
+const { PROJECT_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
 const getProjects = async ({ skip, limit, hashtag }) => {
   const tag = hashtag?.trim();
@@ -64,7 +65,7 @@ const updateProject = async ({
   );
 
   if (!project) {
-    throw new NotFoundError("Project not found");
+    throw new NotFoundError(PROJECT_NOT_FOUND_ERROR_MSG);
   }
 
   return project;
@@ -77,7 +78,7 @@ const deleteProject = async ({ projectId, owner }) => {
   });
 
   if (!project) {
-    throw new NotFoundError("Project not found");
+    throw new NotFoundError(PROJECT_NOT_FOUND_ERROR_MSG);
   }
 };
 

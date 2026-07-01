@@ -2,8 +2,14 @@ const INTERNAL_SERVER_ERROR = "Internal Server Error";
 const NOT_FOUND_ERROR_MSG = "The server can not find the requested resource";
 const FORBIDDEN_ORIGIN_ERROR_MSG = "Forbidden origin";
 const USER_NOT_FOUND_ERROR_MSG = "User is not found";
+
 const PHOTO_NOT_FOUND_ERROR_MSG = "Photo is not found";
+const SUCCESSFUL_PHOTO_DELETE_MSG = "The photo has been deleted";
+const FORBIDDEN_ERROR_MSG = "You are not allowed to delete this photo";
 const POST_NOT_FOUND_ERROR_MSG = "Post is not found";
+const SUCCESSFUL_POST_DELETE_MSG = "Post is deleted";
+const PROJECT_NOT_FOUND_ERROR_MSG = "Project is not found";
+const SUCCESSFUL_PROJECT_DELETE_MSG = "Project is deleted";
 const BAD_REQUEST_ERROR_MSG = "The entered data is incorrect";
 const BAD_URL_ERROR_MSG = "Invalid Link";
 const IMAGE_BAD_URL_ERROR_MSG = "Invalid image link";
@@ -13,8 +19,6 @@ const WRONG_EMAIL_OR_PASSWORD_ERROR_MSG = "Wrong email or password";
 const WRONG_PASSWORD_ERROR_MSG = "The password is wrong";
 const TOKEN_ERROR_MSG = "Token error";
 const CONFLICT_SIGNUP_EMAIL_ERROR_MSG = "User with this email already exists";
-const SUCCESSFUL_POST_DELETE_MSG = "Post is deleted";
-const FORBIDDEN_ERROR_MSG = "You are not allowed to delete this photo";
 const CONFLICT_UPDATE_EMAIL_ERROR_MSG =
   "The email you entered is already in use";
 const AUTHENTICATION_ERROR_MSG = "Authentication error";
@@ -25,7 +29,6 @@ const SUCCESSFUL_LOGIN_MSG = "You have successfully logged in";
 const SUCCESSFUL_LOGOUT_MSG = "You successfully logged out";
 const SUCCESSFUL_EMAIL_UPDATE_MSG = "Your email has been updated";
 const SUCCESSFUL_PASSWORD_UPDATE_MSG = "Your password has been updated";
-const SUCCESSFUL_PHOTO_DELETE_MSG = "The photo has been deleted";
 const EMAIL_SENT_SUCCESSFULLY_MSG =
   "Email has been sent, please follow the instructions.";
 
@@ -68,6 +71,8 @@ module.exports = {
   SUCCESSFUL_EMAIL_UPDATE_MSG,
   SUCCESSFUL_PASSWORD_UPDATE_MSG,
   SUCCESSFUL_PHOTO_DELETE_MSG,
+  PROJECT_NOT_FOUND_ERROR_MSG,
+  SUCCESSFUL_PROJECT_DELETE_MSG,
   EMAIL_SENT_SUCCESSFULLY_MSG,
   REQUEST_UPDATE_EMAIL_SUBJECT,
   REQUEST_UPDATE_EMAIL_TEXT,
