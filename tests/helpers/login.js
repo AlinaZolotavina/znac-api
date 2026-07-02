@@ -2,7 +2,7 @@ const request = require("supertest");
 const app = require("../../app");
 
 const login = async ({
-  email = "alina@test.com",
+  email = "test@test.com",
   password = "12345678",
 } = {}) => {
   const response = await request(app).post("/signin").send({ email, password });

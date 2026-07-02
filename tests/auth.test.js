@@ -48,7 +48,7 @@ describe("Authentication", () => {
       await createUser();
 
       const response = await request(app).post("/signin").send({
-        email: "alina@test.com",
+        email: "test@test.com",
         password: "12345678",
       });
 
@@ -58,7 +58,7 @@ describe("Authentication", () => {
       const [cookie] = response.headers["set-cookie"];
       expectAuthCookie(cookie);
 
-      expect(response.body.user.email).toBe("alina@test.com");
+      expect(response.body.user.email).toBe("test@test.com");
       expect(typeof response.body.user._id).toBe("string");
       expect(response.body.user).not.toHaveProperty("password");
       expect(response.body.message).toBe(SUCCESSFUL_LOGIN_MSG);
@@ -127,7 +127,7 @@ describe("Authentication", () => {
 
       expect(response.status).toBe(200);
 
-      expect(response.body.email).toBe("alina@test.com");
+      expect(response.body.email).toBe("test@test.com");
       expect(response.body._id).toEqual(expect.any(String));
       expect(response.body).not.toHaveProperty("password");
     });
@@ -157,7 +157,7 @@ describe("Authentication", () => {
       expect(response.body.message).toBe(EMAIL_SENT_SUCCESSFULLY_MSG);
 
       const user = await User.findOne({
-        email: "alina@test.com",
+        email: "test@test.com",
       });
 
       expect(user.updateEmailLink).toEqual(expect.any(String));
@@ -172,7 +172,7 @@ describe("Authentication", () => {
         .put("/profile/update-email")
         .set("Cookie", cookie)
         .send({
-          newEmail: "alina@test.com",
+          newEmail: "test@test.com",
         });
 
       expect(response.status).toBe(409);

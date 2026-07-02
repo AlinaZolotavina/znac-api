@@ -99,7 +99,6 @@ const requestEmailUpdate = (req, res, next) => {
     .catch(next);
 };
 
-// Password reset
 const updateEmail = (req, res, next) => {
   userService
     .updateEmail(req.params.updateEmailLink)
@@ -112,6 +111,7 @@ const updateEmail = (req, res, next) => {
     .catch(next);
 };
 
+// Password reset
 const forgotPassword = (req, res, next) => {
   userService
     .forgotPassword(req.body.email)

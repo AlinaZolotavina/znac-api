@@ -5,7 +5,7 @@ const createUser = async (overrides = {}) => {
   const password = await bcrypt.hash("12345678", 10);
 
   return User.create({
-    email: "alina@test.com",
+    email: "test@test.com",
     password,
     ...overrides,
   });
