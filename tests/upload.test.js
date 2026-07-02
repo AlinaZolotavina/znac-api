@@ -1,11 +1,7 @@
-require("dotenv").config();
-
 const fs = require("fs/promises");
 const path = require("path");
 const request = require("supertest");
-const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-
+const mongo = require("./helpers/setupMongo");
 const app = require("../app");
 
 const User = require("../models/user");
@@ -18,12 +14,7 @@ const { NO_PHOTO_TO_UPLOAD_ERROR_MSG } = require("../utils/constants");
 const fixtures = path.join(__dirname, "fixtures");
 const publicDir = path.join(__dirname, "..", "public");
 
-let mongo;
-
-beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
-  await mongoose.connect(mongo.getUri());
-});
+beforeAll(mongo.connect);
 
 afterEach(async () => {
   await User.deleteMany({});
@@ -35,10 +26,7 @@ afterEach(async () => {
   await Promise.all(files.map((file) => fs.unlink(path.join(publicDir, file))));
 });
 
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongo.stop();
-});
+afterAll(mongo.disconnect);
 
 describe("Upload", () => {
   describe("POST /public", () => {

@@ -1,9 +1,5 @@
-require("dotenv").config();
-
 const request = require("supertest");
-const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-
+const mongo = require("./helpers/setupMongo");
 const app = require("../app");
 
 const User = require("../models/user");
@@ -20,12 +16,7 @@ const {
   PROJECT_NOT_FOUND_ERROR_MSG,
 } = require("../utils/constants");
 
-let mongo;
-
-beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
-  await mongoose.connect(mongo.getUri());
-});
+beforeAll(mongo.connect);
 
 afterEach(async () => {
   await Promise.all([
@@ -36,10 +27,7 @@ afterEach(async () => {
   ]);
 });
 
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongo.stop();
-});
+afterAll(mongo.disconnect);
 
 describe("Permissions", () => {
   describe("Posts", () => {

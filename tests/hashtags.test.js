@@ -1,9 +1,5 @@
-require("dotenv").config();
-
 const request = require("supertest");
-const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-
+const mongo = require("./helpers/setupMongo");
 const app = require("../app");
 
 const User = require("../models/user");
@@ -13,21 +9,13 @@ const createUser = require("./helpers/createUser");
 const login = require("./helpers/login");
 const createHashtag = require("./helpers/createHashtag");
 
-let mongo;
-
-beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
-  await mongoose.connect(mongo.getUri());
-});
+beforeAll(mongo.connect);
 
 afterEach(async () => {
   await Promise.all([User.deleteMany({}), Hashtag.deleteMany({})]);
 });
 
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongo.stop();
-});
+afterAll(mongo.disconnect);
 
 describe("Hashtags", () => {
   describe("GET /hashtags", () => {
