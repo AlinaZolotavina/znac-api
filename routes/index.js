@@ -19,6 +19,8 @@ const {
   validatePostRequest,
   validateSearch,
   validateContactMessage,
+  validateAddHashtag,
+  validateUpdateHashtag,
 } = require("../middlewares/validateRequests");
 const auth = require("../middlewares/auth");
 const authRouter = require("./auth");
@@ -72,8 +74,8 @@ router.post(
   validateUploadedFiles,
   uploadPhoto
 );
-router.post("/hashtags", addHashtag);
-router.patch("/hashtags", updateHashtag);
+router.post("/hashtags", validateAddHashtag, addHashtag);
+router.patch("/hashtags", validateUpdateHashtag, updateHashtag);
 router.use(userRouter);
 router.use(photoRouter);
 router.use(postRouter);

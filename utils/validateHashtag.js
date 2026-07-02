@@ -1,10 +1,8 @@
-module.exports.validateHashtag = (hashtag) => {
-  // eslint-disable-next-line no-useless-escape
-  const regex = /^[A-Za-zА-Яа-я0-9_]*$/;
-  if (regex.test(hashtag)) {
-    return hashtag;
-  }
-  throw new Error(
-    "Only letters, numbers and underscores are allowed for hashtags"
-  );
+const HASHTAG_REGEX = /^[A-Za-zА-Яа-я0-9_]*$/;
+
+const validateHashtag = (hashtag) => HASHTAG_REGEX.test(String(hashtag));
+
+module.exports = {
+  HASHTAG_REGEX,
+  validateHashtag,
 };

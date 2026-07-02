@@ -1,6 +1,7 @@
 const getPagination = require("../utils/pagination");
 const normalizeHashtagName = require("../utils/normalizeHashtagName");
 const NotFoundError = require("../errors/not-found-err");
+const { HASHTAG_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 const Hashtag = require("../models/hashtag");
 
 const getHashtags = async (req, res, next) => {
@@ -40,7 +41,7 @@ const updateHashtag = (req, res, next) => {
   )
     .then((hashtag) => {
       if (!hashtag) {
-        return next(new NotFoundError("Hashtag not found"));
+        return next(new NotFoundError(HASHTAG_NOT_FOUND_ERROR_MSG));
       }
 
       return res.status(200).send(hashtag);

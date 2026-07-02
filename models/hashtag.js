@@ -1,15 +1,14 @@
 const mongoose = require("mongoose");
 const { validateHashtag } = require("../utils/validateHashtag");
+const { INVALID_HASHTAG_ERROR_MSG } = require("../utils/constants");
 
 const hashtagSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
     validate: {
-      validator(v) {
-        return validateHashtag(v);
-      },
-      message: "Only letters, numbers and underscores are allowed for hashtags",
+      validator: validateHashtag,
+      message: INVALID_HASHTAG_ERROR_MSG,
     },
     minLength: 2,
     maxLength: 30,

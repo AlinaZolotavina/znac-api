@@ -46,6 +46,9 @@ const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 
 const VALIDATION_ERROR_MSG = "Validation failed";
 const NO_PHOTO_TO_UPLOAD_ERROR_MSG = "No photo to upload";
+const HASHTAG_NOT_FOUND_ERROR_MSG = "Hashtag not found";
+const INVALID_HASHTAG_ERROR_MSG =
+  "Only letters, numbers and underscores are allowed for hashtags";
 
 module.exports = {
   INTERNAL_SERVER_ERROR,
@@ -88,4 +91,6 @@ module.exports = {
   WARNING_UPDATE_EMAIL_TEXT,
   VALIDATION_ERROR_MSG,
   NO_PHOTO_TO_UPLOAD_ERROR_MSG,
+  HASHTAG_NOT_FOUND_ERROR_MSG,
+  INVALID_HASHTAG_ERROR_MSG,
 };
