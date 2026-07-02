@@ -1,5 +1,6 @@
 const getPagination = require("../utils/pagination");
 const projectService = require("../services/projectService");
+const { SUCCESSFUL_PROJECT_DELETE_MSG } = require("../utils/constants");
 
 const getProjects = async (req, res, next) => {
   try {
@@ -31,7 +32,7 @@ const deleteProject = async (req, res, next) => {
     });
 
     res.status(200).send({
-      message: "Project has been successfully deleted.",
+      message: SUCCESSFUL_PROJECT_DELETE_MSG,
     });
   } catch (err) {
     next(err);
