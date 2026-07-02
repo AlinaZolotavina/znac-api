@@ -47,9 +47,15 @@ const validateSignin = celebrate({
   }),
 });
 
-const validateUpdateUserEmail = celebrate({
+const validateRequestEmailUpdate = celebrate({
   body: Joi.object().keys({
     newEmail: Joi.string().email().required(),
+  }),
+});
+
+const validateUpdateUserEmail = celebrate({
+  params: Joi.object({
+    updateEmailLink: Joi.string().required(),
   }),
 });
 
@@ -193,6 +199,7 @@ const validateContactMessage = celebrate({
 module.exports = {
   validateSignup,
   validateSignin,
+  validateRequestEmailUpdate,
   validateUpdateUserEmail,
   validateForgotPassword,
   validateResetPassword,

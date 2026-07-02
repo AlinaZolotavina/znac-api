@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const {
+  validateRequestEmailUpdate,
   validateUpdateUserEmail,
   validateUpdatePassword,
 } = require("../middlewares/validateRequests");
@@ -11,7 +12,11 @@ const {
 } = require("../controllers/users");
 
 router.get("/profile", getMe);
-router.put("/profile/update-email", requestEmailUpdate);
+router.put(
+  "/profile/update-email",
+  validateRequestEmailUpdate,
+  requestEmailUpdate
+);
 router.patch(
   "/profile/update-email/:updateEmailLink",
   validateUpdateUserEmail,

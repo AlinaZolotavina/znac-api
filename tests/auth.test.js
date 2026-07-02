@@ -6,6 +6,7 @@ const User = require("../models/user");
 const createUser = require("./helpers/createUser");
 const expectAuthCookie = require("./helpers/expectAuthCookie");
 const login = require("./helpers/login");
+const createUpdateEmailToken = require("./helpers/createUpdateEmailToken");
 
 const {
   SUCCESSFUL_LOGIN_MSG,
@@ -13,6 +14,10 @@ const {
   SUCCESSFUL_LOGOUT_MSG,
   TOKEN_ERROR_MSG,
   UNAUTHORIZED_ERROR_MSG,
+  EMAIL_SENT_SUCCESSFULLY_MSG,
+  SUCCESSFUL_EMAIL_UPDATE_MSG,
+  CONFLICT_UPDATE_EMAIL_ERROR_MSG,
+  RESET_TOKEN_ERROR_MSG,
 } = require("../utils/constants");
 
 beforeAll(mongo.connect);
@@ -132,6 +137,146 @@ describe("Authentication", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe(UNAUTHORIZED_ERROR_MSG);
+    });
+  });
+
+  describe("PUT /profile/update-email", () => {
+    test("should request email update", async () => {
+      await createUser();
+
+      const cookie = await login();
+
+      const response = await request(app)
+        .put("/profile/update-email")
+        .set("Cookie", cookie)
+        .send({
+          newEmail: "new@test.com",
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe(EMAIL_SENT_SUCCESSFULLY_MSG);
+
+      const user = await User.findOne({
+        email: "alina@test.com",
+      });
+
+      expect(user.updateEmailLink).toEqual(expect.any(String));
+    });
+
+    test("should reject updating to the same email", async () => {
+      await createUser();
+
+      const cookie = await login();
+
+      const response = await request(app)
+        .put("/profile/update-email")
+        .set("Cookie", cookie)
+        .send({
+          newEmail: "alina@test.com",
+        });
+
+      expect(response.status).toBe(409);
+      expect(response.body.message).toBe(CONFLICT_UPDATE_EMAIL_ERROR_MSG);
+    });
+
+    test("should require authentication", async () => {
+      const response = await request(app).put("/profile/update-email").send({
+        newEmail: "new@test.com",
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe(UNAUTHORIZED_ERROR_MSG);
+    });
+
+    test("should reject invalid email", async () => {
+      await createUser();
+
+      const cookie = await login();
+
+      const response = await request(app)
+        .put("/profile/update-email")
+        .set("Cookie", cookie)
+        .send({
+          newEmail: "invalid-email",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("Validation failed");
+    });
+  });
+
+  describe("PATCH /profile/update-email/:token", () => {
+    test("should reject invalid token", async () => {
+      await createUser();
+
+      const cookie = await login();
+
+      const response = await request(app)
+        .patch("/profile/update-email/invalid-token")
+        .set("Cookie", cookie);
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe(RESET_TOKEN_ERROR_MSG);
+    });
+
+    test("should update email", async () => {
+      const user = await createUser();
+
+      const cookie = await login();
+
+      const token = await createUpdateEmailToken(user, "new@test.com");
+
+      const response = await request(app)
+        .patch(`/profile/update-email/${token}`)
+        .set("Cookie", cookie);
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.message).toBe(SUCCESSFUL_EMAIL_UPDATE_MSG);
+
+      expect(response.body.user.email).toBe("new@test.com");
+
+      const saved = await User.findById(user._id);
+
+      expect(saved.email).toBe("new@test.com");
+      expect(saved.updateEmailLink).toBe("");
+    });
+
+    test("should reject mismatched token", async () => {
+      const user = await createUser();
+
+      const cookie = await login();
+
+      const token = await createUpdateEmailToken(user, "new@test.com");
+
+      user.updateEmailLink = "another-token";
+      await user.save();
+
+      const response = await request(app)
+        .patch(`/profile/update-email/${token}`)
+        .set("Cookie", cookie);
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe(RESET_TOKEN_ERROR_MSG);
+    });
+
+    test("should reject existing email from token", async () => {
+      const user = await createUser();
+
+      await createUser({
+        email: "existing@test.com",
+      });
+
+      const cookie = await login();
+
+      const token = await createUpdateEmailToken(user, "existing@test.com");
+
+      const response = await request(app)
+        .patch(`/profile/update-email/${token}`)
+        .set("Cookie", cookie);
+
+      expect(response.status).toBe(409);
+      expect(response.body.message).toBe(CONFLICT_UPDATE_EMAIL_ERROR_MSG);
     });
   });
 });
