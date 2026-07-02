@@ -22,6 +22,7 @@ const {
   AUTHENTICATION_ERROR_MSG,
   RESET_TOKEN_ERROR_MSG,
   NO_RESET_TOKEN_ERROR_MSG,
+  PASSWORDS_DO_NOT_MATCH_ERROR_MSG,
   CONFLICT_UPDATE_EMAIL_ERROR_MSG,
   REQUEST_UPDATE_EMAIL_SUBJECT,
   REQUEST_UPDATE_EMAIL_TEXT,
@@ -253,7 +254,7 @@ const resetPassword = async ({
   }
 
   if (newPassword !== confirmPassword) {
-    throw new BadRequestError("Введенные пароли не совпадают");
+    throw new BadRequestError(PASSWORDS_DO_NOT_MATCH_ERROR_MSG);
   }
 
   let decoded;
@@ -287,13 +288,17 @@ const resetPassword = async ({
 
   await user.save();
 
-  await transporter.sendMail({
-    from: NODEMAILER_USER,
-    to: user.email,
-    subject: RESET_PASSWORD_SUBJECT,
-    text: RESET_PASSWORD_TEXT,
-    html: successfullPasswordUpdateEmailMarkup,
-  });
+  try {
+    await transporter.sendMail({
+      from: NODEMAILER_USER,
+      to: user.email,
+      subject: RESET_PASSWORD_SUBJECT,
+      text: RESET_PASSWORD_TEXT,
+      html: successfullPasswordUpdateEmailMarkup,
+    });
+  } catch (err) {
+    console.error("Failed to send password reset confirmation email:", err);
+  }
 };
 
 module.exports = {

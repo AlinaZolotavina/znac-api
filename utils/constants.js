@@ -24,6 +24,7 @@ const CONFLICT_UPDATE_EMAIL_ERROR_MSG =
 const AUTHENTICATION_ERROR_MSG = "Authentication error";
 const RESET_TOKEN_ERROR_MSG = "Incorrect token or it is expired";
 const NO_RESET_TOKEN_ERROR_MSG = "User with this token does not exist";
+const PASSWORDS_DO_NOT_MATCH_ERROR_MSG = "The entered passwords do not match";
 
 const SUCCESSFUL_LOGIN_MSG = "You have successfully logged in";
 const SUCCESSFUL_LOGOUT_MSG = "You successfully logged out";
@@ -72,6 +73,7 @@ module.exports = {
   AUTHENTICATION_ERROR_MSG,
   RESET_TOKEN_ERROR_MSG,
   NO_RESET_TOKEN_ERROR_MSG,
+  PASSWORDS_DO_NOT_MATCH_ERROR_MSG,
   SUCCESSFUL_LOGIN_MSG,
   SUCCESSFUL_LOGOUT_MSG,
   SUCCESSFUL_EMAIL_UPDATE_MSG,
