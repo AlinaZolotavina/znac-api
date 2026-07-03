@@ -132,25 +132,28 @@ const validatePostRequest = celebrate({
 });
 
 const validateAddPost = celebrate({
-  body: Joi.object().keys({
+  body: Joi.object({
     theme: Joi.string().required(),
     icon: Joi.string().required(),
     title: Joi.string().min(2).max(50).required(),
-    photoLink: Joi.string().allow("").custom(validateUrl),
+    photoLink: Joi.string().custom(validateUrl),
+    photoFilename: Joi.string(),
     hashtags: Joi.string().min(2).max(500).required(),
     text: Joi.string().min(2).max(5000).required(),
-  }),
+  }).oxor("photoLink", "photoFilename"),
 });
 
 const validateUpdatePost = celebrate({
-  body: Joi.object().keys({
+  body: Joi.object({
     newTheme: Joi.string().required(),
     newIcon: Joi.string().required(),
     newTitle: Joi.string().min(2).max(50).required(),
-    newPhotoLink: Joi.string().allow("").custom(validateUrl),
+    newPhotoLink: Joi.string().custom(validateUrl),
+    newPhotoFilename: Joi.string(),
+    removePhoto: Joi.boolean(),
     newHashtags: Joi.string().min(2).max(500).required(),
     newText: Joi.string().min(2).max(5000).required(),
-  }),
+  }).oxor("newPhotoLink", "newPhotoFilename", "removePhoto"),
 });
 
 const validateProjectRequest = celebrate({

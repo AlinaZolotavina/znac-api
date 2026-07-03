@@ -12,6 +12,17 @@ node_modules
 public/*
 !public/.gitkeep
 
+# Keep upload directory structure, ignore uploaded content
+uploads/*
+!uploads/gallery/
+!uploads/posts/
+
+uploads/gallery/*
+!uploads/gallery/.gitkeep
+
+uploads/posts/*
+!uploads/posts/.gitkeep
+
 # Optional npm cache directory
 .npm
 

@@ -22,11 +22,14 @@ const postSchema = new mongoose.Schema({
     minLength: 2,
     maxlength: 50,
   },
+  photoFilename: {
+    type: String,
+  },
   photoLink: {
     type: String,
     validate: {
       validator(v) {
-        return isUrl(v, { require_tld: false });
+        return !v || isUrl(v, { require_tld: false });
       },
       message: IMAGE_BAD_URL_ERROR_MSG,
     },
@@ -54,5 +57,16 @@ postSchema.index({ owner: 1 });
 postSchema.index({ theme: 1 });
 postSchema.index({ createdAt: -1 });
 postSchema.index({ hashtags: 1 });
+
+postSchema.pre("validate", function (next) {
+  if (this.photoLink && this.photoFilename) {
+    this.invalidate(
+      "photoFilename",
+      "Only one of photoLink or photoFilename can be specified"
+    );
+  }
+
+  next();
+});
 
 module.exports = mongoose.model("post", postSchema);

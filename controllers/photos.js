@@ -82,7 +82,7 @@ const deletePhoto = (req, res, next) => {
 const increaseViews = (req, res, next) => {
   photoService
     .increaseViews(req.params.photoId)
-    .then((photo) => res.send(photo))
+    .then((photo) => res.send(serializePhoto(photo)))
     .catch(next);
 };
 
@@ -93,7 +93,7 @@ const editHashtags = (req, res, next) => {
       photoId: req.params.photoId,
       hashtags: req.body.newHashtags,
     })
-    .then((photo) => res.send(photo))
+    .then((photo) => res.send(serializePhoto(photo)))
     .catch(next);
 };
 

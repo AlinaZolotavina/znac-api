@@ -1,6 +1,9 @@
 const Post = require("../models/post");
 const normalizeHashtags = require("../utils/normalizeHashtags");
 const escapeRegex = require("../utils/escapeRegex");
+const serializePost = require("../utils/serializePost");
+const resolvePostPhotoPath = require("../utils/resolvePostPhotoPath");
+const fs = require("fs").promises;
 const NotFoundError = require("../errors/not-found-err");
 const { POST_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
@@ -32,7 +35,7 @@ const getPosts = async ({ skip, limit, search = "", theme = "" }) => {
   ]);
 
   return {
-    data: posts,
+    data: posts.map(serializePost),
     total,
   };
 };
@@ -44,75 +47,117 @@ const getPost = async (postId) => {
     throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
   }
 
-  return post;
+  return serializePost(post);
 };
 
-const addPost = ({ ownerId, theme, icon, title, photoLink, hashtags, text }) =>
+const addPost = ({
+  ownerId,
+  theme,
+  icon,
+  title,
+  photoLink,
+  photoFilename,
+  hashtags,
+  text,
+}) =>
   Post.create({
     owner: ownerId,
     theme,
     icon,
     title,
     photoLink,
+    photoFilename,
     hashtags: normalizeHashtags(hashtags),
     text,
   });
 
-const updatePost = ({
+const updatePost = async ({
   ownerId,
   postId,
   newTheme,
   newIcon,
   newTitle,
   newPhotoLink,
+  newPhotoFilename,
+  removePhoto,
   newHashtags,
   newText,
 }) => {
-  const updateData = {
-    theme: newTheme,
-    icon: newIcon,
-    title: newTitle,
-    hashtags: normalizeHashtags(newHashtags),
-    text: newText,
-  };
-
-  const updateQuery = newPhotoLink
-    ? { ...updateData, photoLink: newPhotoLink }
-    : {
-        $set: updateData,
-        $unset: { photoLink: 1 },
-      };
-
-  return Post.findOneAndUpdate(
-    {
-      _id: postId,
-      owner: ownerId,
-    },
-    updateQuery,
-    {
-      new: true,
-      runValidators: true,
-    }
-  ).then((post) => {
-    if (!post) {
-      throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
-    }
-
-    return post;
-  });
-};
-
-const deletePost = ({ ownerId, postId }) =>
-  Post.findOneAndDelete({
+  const post = await Post.findOne({
     _id: postId,
     owner: ownerId,
-  }).then((post) => {
-    if (!post) {
-      throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
-    }
-
-    return post;
   });
+
+  if (!post) {
+    throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
+  }
+
+  const shouldDeleteOldFile =
+    !!post.photoFilename && (removePhoto || newPhotoFilename || newPhotoLink);
+  const oldFilePath = shouldDeleteOldFile ? resolvePostPhotoPath(post) : null;
+
+  console.log({
+    shouldDeleteOldFile,
+    oldFilePath,
+    removePhoto,
+    newPhotoFilename,
+    newPhotoLink,
+    currentFilename: post.photoFilename,
+  });
+
+  post.theme = newTheme;
+  post.icon = newIcon;
+  post.title = newTitle;
+  post.hashtags = normalizeHashtags(newHashtags);
+  post.text = newText;
+
+  if (removePhoto) {
+    post.photoLink = undefined;
+    post.photoFilename = undefined;
+  } else if (newPhotoFilename) {
+    post.photoFilename = newPhotoFilename;
+    post.photoLink = undefined;
+  } else if (newPhotoLink) {
+    post.photoLink = newPhotoLink;
+    post.photoFilename = undefined;
+  }
+
+  await post.save();
+
+  if (oldFilePath) {
+    console.log("Deleting:", oldFilePath);
+    try {
+      await fs.unlink(oldFilePath);
+    } catch (err) {
+      console.error(`Failed to delete file ${oldFilePath}:`, err.message);
+    }
+  }
+
+  return post;
+};
+
+const deletePost = async ({ ownerId, postId }) => {
+  const post = await Post.findOneAndDelete({
+    _id: postId,
+    owner: ownerId,
+  });
+
+  if (!post) {
+    throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
+  }
+
+  const filePath = resolvePostPhotoPath(post);
+
+  if (filePath) {
+    try {
+      await fs.unlink(filePath);
+    } catch (err) {
+      console.error(`Failed to delete file ${filePath}:`, err.message);
+    }
+  }
+
+  return post;
+};
 
 module.exports = {
   getPosts,

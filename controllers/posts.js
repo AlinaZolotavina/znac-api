@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const postService = require("../services/postService");
 const getPagination = require("../utils/pagination");
-const NotFoundError = require("../errors/not-found-err");
+const serializePost = require("../utils/serializePost");
 const { SUCCESSFUL_POST_DELETE_MSG } = require("../utils/constants");
 
 const getPosts = async (req, res, next) => {
@@ -54,7 +54,7 @@ const addPost = (req, res, next) => {
       ownerId: req.user._id,
       ...req.body,
     })
-    .then((post) => res.status(201).send(post))
+    .then((post) => res.status(201).send(serializePost(post)))
     .catch(next);
 };
 
@@ -65,29 +65,7 @@ const updatePost = (req, res, next) => {
       postId: req.params.postId,
       ...req.body,
     })
-    .then((post) => res.send(post))
-    .catch(next);
-};
-
-const uploadPostPhoto = (req, res, next) => {
-  if (!req.files || Object.keys(req.files).length === 0) {
-    return next(new NotFoundError("No post photo to upload"));
-  }
-  const { file } = req.files;
-  const filePath = `${process.env.API_URL}public/${file.name}`;
-  return file
-    .mv(`./public/${file.name}`)
-    .then(() => {
-      res.status(200).send({
-        status: true,
-        message: "Post photo is uploaded",
-        data: {
-          name: file.name,
-          size: file.size,
-          path: filePath,
-        },
-      });
-    })
+    .then((post) => res.send(serializePost(post)))
     .catch(next);
 };
 
@@ -97,5 +75,4 @@ module.exports = {
   deletePost,
   addPost,
   updatePost,
-  uploadPostPhoto,
 };
