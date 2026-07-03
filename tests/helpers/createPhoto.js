@@ -1,12 +1,18 @@
 const Photo = require("../../models/photo");
 
-const createPhoto = async (ownerId, overrides = {}) =>
-  Photo.create({
+const createPhoto = async (ownerId, overrides = {}) => {
+  const photo = {
     owner: ownerId,
-    link: "https://example.com/photo.jpg",
     hashtags: ["node", "express"],
     views: 0,
     ...overrides,
-  });
+  };
+
+  if (!photo.link && !photo.filename) {
+    photo.link = "https://example.com/photo.jpg";
+  }
+
+  return Photo.create(photo);
+};
 
 module.exports = createPhoto;

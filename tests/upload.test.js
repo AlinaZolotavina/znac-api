@@ -12,18 +12,20 @@ const login = require("./helpers/login");
 const { NO_PHOTO_TO_UPLOAD_ERROR_MSG } = require("../utils/constants");
 
 const fixtures = path.join(__dirname, "fixtures");
-const publicDir = path.join(__dirname, "..", "public");
+const uploadsDir = path.join(__dirname, "..", "uploads", "gallery");
 
 beforeAll(mongo.connect);
 
 afterEach(async () => {
   await User.deleteMany({});
 
-  const files = (await fs.readdir(publicDir)).filter(
+  const files = (await fs.readdir(uploadsDir)).filter(
     (file) => file !== ".gitkeep"
   );
 
-  await Promise.all(files.map((file) => fs.unlink(path.join(publicDir, file))));
+  await Promise.all(
+    files.map((file) => fs.unlink(path.join(uploadsDir, file)))
+  );
 });
 
 afterAll(mongo.disconnect);
@@ -35,9 +37,9 @@ describe("Upload", () => {
       const cookie = await login();
 
       const response = await request(app)
-        .post("/public")
+        .post("/upload")
         .set("Cookie", cookie)
-        .attach("file", path.join(fixtures, "image.jpg"));
+        .attach("photos", path.join(fixtures, "image.jpg"));
 
       expect(response.status).toBe(201);
 
@@ -48,13 +50,13 @@ describe("Upload", () => {
 
       expect(response.body.data[0]).toEqual(
         expect.objectContaining({
-          name: expect.stringMatching(/\.jpg$/),
+          filename: expect.stringMatching(/\.jpg$/),
           size: expect.any(Number),
-          path: expect.stringContaining("/public/"),
+          url: expect.stringContaining("/uploads/gallery/"),
         })
       );
 
-      const uploaded = (await fs.readdir(publicDir)).filter(
+      const uploaded = (await fs.readdir(uploadsDir)).filter(
         (file) => file !== ".gitkeep"
       );
 
@@ -67,16 +69,16 @@ describe("Upload", () => {
       const cookie = await login();
 
       const response = await request(app)
-        .post("/public")
+        .post("/upload")
         .set("Cookie", cookie)
-        .attach("file", path.join(fixtures, "image.jpg"))
-        .attach("file", path.join(fixtures, "image.webp"));
+        .attach("photos", path.join(fixtures, "image.jpg"))
+        .attach("photos", path.join(fixtures, "image.webp"));
 
       expect(response.status).toBe(201);
 
       expect(response.body.data).toHaveLength(2);
 
-      const uploaded = (await fs.readdir(publicDir)).filter(
+      const uploaded = (await fs.readdir(uploadsDir)).filter(
         (file) => file !== ".gitkeep"
       );
 
@@ -90,14 +92,14 @@ describe("Upload", () => {
       const cookie = await login();
 
       const response = await request(app)
-        .post("/public")
+        .post("/upload")
         .set("Cookie", cookie)
-        .attach("file", path.join(fixtures, "fake.jpg"));
+        .attach("photos", path.join(fixtures, "fake.jpg"));
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe("Invalid file content: fake.jpg");
 
-      const uploaded = (await fs.readdir(publicDir)).filter(
+      const uploaded = (await fs.readdir(uploadsDir)).filter(
         (file) => file !== ".gitkeep"
       );
 
@@ -109,14 +111,14 @@ describe("Upload", () => {
       const cookie = await login();
 
       const response = await request(app)
-        .post("/public")
+        .post("/upload")
         .set("Cookie", cookie)
-        .attach("file", path.join(fixtures, "test.gif"));
+        .attach("photos", path.join(fixtures, "test.gif"));
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe("Unsupported file type: test.gif");
 
-      const uploaded = (await fs.readdir(publicDir)).filter(
+      const uploaded = (await fs.readdir(uploadsDir)).filter(
         (file) => file !== ".gitkeep"
       );
 
@@ -128,7 +130,7 @@ describe("Upload", () => {
       const cookie = await login();
 
       const response = await request(app)
-        .post("/public")
+        .post("/upload")
         .set("Cookie", cookie)
         .field("dummy", "value");
 

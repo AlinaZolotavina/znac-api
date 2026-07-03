@@ -243,7 +243,7 @@ describe("Posts", () => {
       expect(saved.text).toBe("Updated text");
     });
 
-    test("should remove photoLink when empty", async () => {
+    test("should remove photo when removePhoto is true", async () => {
       const user = await createUser();
 
       const cookie = await login();
@@ -257,7 +257,7 @@ describe("Posts", () => {
           newTheme: post.theme,
           newIcon: post.icon,
           newTitle: post.title,
-          newPhotoLink: "",
+          removePhoto: true,
           newHashtags: "node express",
           newText: post.text,
         });

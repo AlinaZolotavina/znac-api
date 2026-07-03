@@ -372,12 +372,12 @@ describe("Photos", () => {
 
       const fileName = "photo-test-delete.jpg";
 
-      const filePath = path.join(__dirname, "../public", fileName);
+      const filePath = path.join(__dirname, "../uploads/gallery", fileName);
 
       await fs.writeFile(filePath, "test");
 
       const photo = await createPhoto(user._id, {
-        link: `${process.env.API_URL}public/${fileName}`,
+        filename: fileName,
       });
 
       await expect(fs.stat(filePath)).resolves.toBeDefined();
