@@ -1,8 +1,8 @@
-const uploadPhoto = (files) =>
+const uploadPhoto = (files, uploadType) =>
   files.map((file) => ({
-    name: file.filename,
+    filename: file.filename,
     size: file.size,
-    path: `${process.env.API_URL}public/${file.filename}`,
+    url: `${process.env.API_URL}uploads/${uploadType}/${file.filename}`,
   }));
 
 module.exports = {

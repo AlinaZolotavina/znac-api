@@ -4,39 +4,47 @@ const path = require("path");
 
 const BadRequestError = require("../errors/bad-request-err");
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, path.join(__dirname, "../public"));
-  },
+const allowedDirectories = new Set(["gallery", "posts"]);
 
-  filename(req, file, cb) {
-    const extension = path.extname(file.originalname).toLowerCase();
+const createUpload = (directory) => {
+  if (!allowedDirectories.has(directory)) {
+    throw new Error(`Unknown upload directory: ${directory}`);
+  }
 
-    cb(null, `${crypto.randomUUID()}${extension}`);
-  },
-});
+  const storage = multer.diskStorage({
+    destination(req, file, cb) {
+      cb(null, path.join(__dirname, "../uploads", directory));
+    },
 
-const upload = multer({
-  storage,
+    filename(req, file, cb) {
+      const extension = path.extname(file.originalname).toLowerCase();
 
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
-    files: 10,
-  },
+      cb(null, `${crypto.randomUUID()}${extension}`);
+    },
+  });
 
-  fileFilter(req, file, cb) {
-    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+  return multer({
+    storage,
 
-    const extension = path.extname(file.originalname).toLowerCase();
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+      files: 10,
+    },
 
-    if (!allowedExtensions.includes(extension)) {
-      return cb(
-        new BadRequestError(`Unsupported file type: ${file.originalname}`)
-      );
-    }
+    fileFilter(req, file, cb) {
+      const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
-    cb(null, true);
-  },
-});
+      const extension = path.extname(file.originalname).toLowerCase();
 
-module.exports = upload;
+      if (!allowedExtensions.includes(extension)) {
+        return cb(
+          new BadRequestError(`Unsupported file type: ${file.originalname}`)
+        );
+      }
+
+      cb(null, true);
+    },
+  });
+};
+
+module.exports = createUpload;

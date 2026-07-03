@@ -25,6 +25,15 @@ app.use(
   })
 );
 
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    index: false,
+    dotfiles: "deny",
+    redirect: false,
+  })
+);
+
 app.use(cookieParser());
 
 app.use(express.json());

@@ -2,6 +2,7 @@
 const photoService = require("../services/photoService");
 
 const getPagination = require("../utils/pagination");
+const serializePhoto = require("../utils/serializePhoto");
 
 const { SUCCESSFUL_PHOTO_DELETE_MSG } = require("../utils/constants");
 
@@ -49,12 +50,18 @@ const findPhoto = async (req, res, next) => {
 };
 
 const addPhoto = (req, res, next) => {
+  const { link, filename, hashtags, views } = req.body;
   photoService
     .addPhoto({
       ownerId: req.user._id,
-      ...req.body,
+      link,
+      filename,
+      hashtags,
+      views,
     })
-    .then((photo) => res.status(201).send(photo))
+    .then((photo) => {
+      res.status(201).send(serializePhoto(photo));
+    })
     .catch(next);
 };
 

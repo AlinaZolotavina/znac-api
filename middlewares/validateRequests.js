@@ -89,11 +89,12 @@ const validatePhotoRequest = celebrate({
 });
 
 const validateAddPhoto = celebrate({
-  body: Joi.object().keys({
-    link: Joi.string().required().custom(validateUrl),
+  body: Joi.object({
+    link: Joi.string().custom(validateUrl),
+    filename: Joi.string(),
     hashtags: Joi.string().required().min(2).max(500),
     views: Joi.number().required().integer(),
-  }),
+  }).xor("link", "filename"),
 });
 
 const validatePhotoHashtags = celebrate({

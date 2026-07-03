@@ -12,7 +12,10 @@ const { getPosts, getPost } = require("../controllers/posts");
 const { getProjects, getProjectHashtags } = require("../controllers/projects");
 const { contactRateLimiter } = require("../middlewares/rateLimiter");
 const { sendContactMessage } = require("../controllers/contact");
-const upload = require("../middlewares/upload");
+const setUploadType = require("../middlewares/setUploadType");
+const createUpload = require("../middlewares/upload");
+const galleryUpload = createUpload("gallery");
+const postUpload = createUpload("posts");
 const validateUploadedFiles = require("../middlewares/validateUploadedFiles");
 const {
   validatePhotoRequest,
@@ -69,8 +72,16 @@ router.post(
 router.use(authRouter);
 router.use(auth);
 router.post(
-  "/public",
-  upload.array("file", 10),
+  "/posts/image",
+  setUploadType("posts"),
+  postUpload.array("images", 10),
+  validateUploadedFiles,
+  uploadPhoto
+);
+router.post(
+  "/upload",
+  setUploadType("gallery"),
+  galleryUpload.array("photos", 10),
   validateUploadedFiles,
   uploadPhoto
 );

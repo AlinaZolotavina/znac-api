@@ -12,7 +12,7 @@ const uploadPhoto = (req, res, next) => {
     res.status(201).send({
       status: true,
       message: "Files uploaded successfully",
-      data: uploadService.uploadPhoto(req.files),
+      data: uploadService.uploadPhoto(req.files, req.uploadType),
     });
   } catch (err) {
     next(err);

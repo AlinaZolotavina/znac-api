@@ -1,10 +1,11 @@
 const fs = require("fs/promises");
-const path = require("path");
 
 const Photo = require("../models/photo");
 const NotFoundError = require("../errors/not-found-err");
 const escapeRegex = require("../utils/escapeRegex");
 const normalizeHashtags = require("../utils/normalizeHashtags");
+const resolvePhotoPath = require("../utils/resolvePhotoPath");
+const serializePhoto = require("../utils/serializePhoto");
 
 const { PHOTO_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
@@ -15,7 +16,7 @@ const getPhotos = async ({ skip, limit }) => {
   ]);
 
   return {
-    data: photos,
+    data: photos.map(serializePhoto),
     total,
   };
 };
@@ -38,15 +39,16 @@ const findPhoto = async ({ skip, limit, keyWord = "" }) => {
   ]);
 
   return {
-    data: photos,
+    data: photos.map(serializePhoto),
     total,
   };
 };
 
-const addPhoto = ({ ownerId, link, hashtags, views }) =>
+const addPhoto = ({ ownerId, link, filename, hashtags, views }) =>
   Photo.create({
     owner: ownerId,
     link,
+    filename,
     hashtags: normalizeHashtags(hashtags),
     views,
   });
@@ -101,13 +103,13 @@ const deletePhoto = async ({ photoId, ownerId }) => {
     throw new NotFoundError(PHOTO_NOT_FOUND_ERROR_MSG);
   }
 
-  const fileName = photo.link.split("/").pop();
+  const filePath = resolvePhotoPath(photo);
 
-  if (photo.link.startsWith(`${process.env.API_URL}public/`)) {
+  if (filePath) {
     try {
-      await fs.unlink(path.join(__dirname, "../public", fileName));
+      await fs.unlink(filePath);
     } catch (err) {
-      console.error(`Failed to delete file ${fileName}:`, err.message);
+      console.error(`Failed to delete file ${filePath}:`, err.message);
     }
   }
 };

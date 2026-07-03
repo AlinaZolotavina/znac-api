@@ -5,13 +5,16 @@ const { IMAGE_BAD_URL_ERROR_MSG } = require("../utils/constants");
 const photoSchema = new mongoose.Schema({
   link: {
     type: String,
-    required: true,
     validate: {
       validator(v) {
-        return isUrl(v, { require_tld: false });
+        return !v || isUrl(v, { require_tld: false });
       },
       message: IMAGE_BAD_URL_ERROR_MSG,
     },
+  },
+
+  filename: {
+    type: String,
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
@@ -38,5 +41,22 @@ const photoSchema = new mongoose.Schema({
 photoSchema.index({ owner: 1 });
 photoSchema.index({ createdAt: -1 });
 photoSchema.index({ hashtags: 1 });
+photoSchema.pre("validate", function (next) {
+  const hasLink = Boolean(this.link);
+  const hasFilename = Boolean(this.filename);
+
+  if (!hasLink && !hasFilename) {
+    this.invalidate("filename", "Either link or filename is required");
+  }
+
+  if (hasLink && hasFilename) {
+    this.invalidate(
+      "filename",
+      "Only one of link or filename can be specified"
+    );
+  }
+
+  next();
+});
 
 module.exports = mongoose.model("photo", photoSchema);
