@@ -54,6 +54,8 @@ router.post("/photos/found", validateSearch, findPhoto);
 router.put("/photos/:photoId/views", validatePhotoRequest, increaseViews);
 
 router.get("/hashtags", getHashtags);
+router.post("/hashtags", validateAddHashtag, addHashtag);
+router.patch("/hashtags", validateUpdateHashtag, updateHashtag);
 
 router.get("/posts", getPosts);
 router.get("/posts/:postId", validatePostRequest, getPost);
@@ -85,8 +87,6 @@ router.post(
   validateUploadedFiles,
   uploadPhoto
 );
-router.post("/hashtags", validateAddHashtag, addHashtag);
-router.patch("/hashtags", validateUpdateHashtag, updateHashtag);
 router.use(userRouter);
 router.use(photoRouter);
 router.use(postRouter);

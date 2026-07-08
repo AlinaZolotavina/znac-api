@@ -7,10 +7,8 @@ npm-debug.log*
 node_modules
 .env
 
-
-# Public directory
-public/*
-!public/.gitkeep
+# Scripts directory
+scripts/*
 
 # Keep upload directory structure, ignore uploaded content
 uploads/*
