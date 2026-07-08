@@ -1,6 +1,11 @@
+jest.mock("../utils/nodemailerTransporter", () => ({
+  sendMail: jest.fn().mockResolvedValue(),
+}));
+
 const request = require("supertest");
 const mongo = require("./helpers/setupMongo");
 const app = require("../app");
+const transporter = require("../utils/nodemailerTransporter");
 
 const User = require("../models/user");
 const createUser = require("./helpers/createUser");
@@ -23,6 +28,7 @@ const {
 beforeAll(mongo.connect);
 
 afterEach(async () => {
+  jest.clearAllMocks();
   await User.deleteMany({});
 });
 
@@ -161,6 +167,29 @@ describe("Authentication", () => {
       });
 
       expect(user.updateEmailLink).toEqual(expect.any(String));
+      expect(user.updateEmailLink).not.toBe("");
+
+      expect(transporter.sendMail).toHaveBeenCalledTimes(2);
+
+      expect(transporter.sendMail).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          from: expect.any(String),
+          to: "test@test.com",
+          subject: expect.any(String),
+          html: expect.any(String),
+        })
+      );
+
+      expect(transporter.sendMail).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          from: expect.any(String),
+          to: "new@test.com",
+          subject: expect.any(String),
+          html: expect.any(String),
+        })
+      );
     });
 
     test("should reject updating to the same email", async () => {
