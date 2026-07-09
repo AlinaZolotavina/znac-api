@@ -18,6 +18,5 @@ router.patch(
   validateUpdateProject,
   updateProject
 );
-// router.patch('/photos/:photoId/hashtags', validatePhotoRequest, editHashtags);
 
 module.exports = router;

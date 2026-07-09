@@ -10,7 +10,6 @@ const {
   editHashtags,
 } = require("../controllers/photos");
 
-// router.get('/photos/found', findPhoto);
 router.post("/photos", validateAddPhoto, addPhoto);
 router.delete("/photos/:photoId", validatePhotoRequest, deletePhoto);
 router.patch(

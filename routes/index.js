@@ -67,7 +67,6 @@ router.patch(
 
 router.get("/posts", getPosts);
 router.get("/posts/:postId", validatePostRequest, getPost);
-// router.delete('/hashtags', deleteHashtag);
 
 router.get("/projects", getProjects);
 router.get("/projecthashtags", getProjectHashtags);

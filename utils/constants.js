@@ -5,12 +5,10 @@ const USER_NOT_FOUND_ERROR_MSG = "User is not found";
 
 const PHOTO_NOT_FOUND_ERROR_MSG = "Photo is not found";
 const SUCCESSFUL_PHOTO_DELETE_MSG = "The photo has been deleted";
-const FORBIDDEN_ERROR_MSG = "You are not allowed to delete this photo";
 const POST_NOT_FOUND_ERROR_MSG = "Post is not found";
 const SUCCESSFUL_POST_DELETE_MSG = "Post is deleted";
 const PROJECT_NOT_FOUND_ERROR_MSG = "Project is not found";
 const SUCCESSFUL_PROJECT_DELETE_MSG = "Project is deleted";
-const BAD_REQUEST_ERROR_MSG = "The entered data is incorrect";
 const BAD_URL_ERROR_MSG = "Invalid Link";
 const IMAGE_BAD_URL_ERROR_MSG = "Invalid image link";
 const BAD_EMAIL_ERROR_MSG = "Invalid email";
@@ -45,7 +43,6 @@ const WARNING_UPDATE_EMAIL_SUBJECT =
   "Your email will be using on the www.znac.org";
 const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 
-const VALIDATION_ERROR_MSG = "Validation failed";
 const NO_PHOTO_TO_UPLOAD_ERROR_MSG = "No photo to upload";
 const HASHTAG_NOT_FOUND_ERROR_MSG = "Hashtag not found";
 const INVALID_HASHTAG_ERROR_MSG =
@@ -58,7 +55,6 @@ module.exports = {
   USER_NOT_FOUND_ERROR_MSG,
   PHOTO_NOT_FOUND_ERROR_MSG,
   POST_NOT_FOUND_ERROR_MSG,
-  BAD_REQUEST_ERROR_MSG,
   BAD_URL_ERROR_MSG,
   IMAGE_BAD_URL_ERROR_MSG,
   BAD_EMAIL_ERROR_MSG,
@@ -68,7 +64,6 @@ module.exports = {
   TOKEN_ERROR_MSG,
   SUCCESSFUL_POST_DELETE_MSG,
   CONFLICT_SIGNUP_EMAIL_ERROR_MSG,
-  FORBIDDEN_ERROR_MSG,
   CONFLICT_UPDATE_EMAIL_ERROR_MSG,
   AUTHENTICATION_ERROR_MSG,
   RESET_TOKEN_ERROR_MSG,
@@ -91,7 +86,6 @@ module.exports = {
   RESET_PASSWORD_TEXT,
   WARNING_UPDATE_EMAIL_SUBJECT,
   WARNING_UPDATE_EMAIL_TEXT,
-  VALIDATION_ERROR_MSG,
   NO_PHOTO_TO_UPLOAD_ERROR_MSG,
   HASHTAG_NOT_FOUND_ERROR_MSG,
   INVALID_HASHTAG_ERROR_MSG,

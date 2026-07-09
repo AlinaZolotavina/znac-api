@@ -8,7 +8,6 @@ const {
   EMAIL_SENT_SUCCESSFULLY_MSG,
 } = require("../utils/constants");
 
-// Registration
 const createUser = (req, res, next) => {
   userService
     .createUser(req.body)
@@ -23,7 +22,6 @@ const createUser = (req, res, next) => {
     .catch(next);
 };
 
-// Authentication
 const login = (req, res, next) => {
   userService
     .login(req.body)

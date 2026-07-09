@@ -42,7 +42,6 @@ const {
   warningOfChangingEmailMarkup,
 } = require("../utils/emailHtmlMarkup");
 
-// Registration
 const createUser = async ({ name, email, password }) => {
   const hash = await bcrypt.hash(password, 10);
 
@@ -63,7 +62,6 @@ const createUser = async ({ name, email, password }) => {
   }
 };
 
-// Authentication
 const login = async ({ email, password }) => {
   const user = await User.findUserByCredentials(email, password);
 

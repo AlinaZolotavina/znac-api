@@ -4,14 +4,8 @@ const {
   validateAddPost,
   validateUpdatePost,
 } = require("../middlewares/validateRequests");
-const {
-  addPost,
-  updatePost,
-  deletePost,
-  //   editHashtags,
-} = require("../controllers/posts");
+const { addPost, updatePost, deletePost } = require("../controllers/posts");
 
-// router.get('/photos/found', findPhoto);
 router.post("/posts", validateAddPost, addPost);
 router.delete("/posts/:postId", validatePostRequest, deletePost);
 router.patch(
