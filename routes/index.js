@@ -10,7 +10,10 @@ const {
 const { increaseViews } = require("../controllers/photos");
 const { getPosts, getPost } = require("../controllers/posts");
 const { getProjects, getProjectHashtags } = require("../controllers/projects");
-const { contactRateLimiter } = require("../middlewares/rateLimiter");
+const {
+  contactRateLimiter,
+  hashtagRateLimiter,
+} = require("../middlewares/rateLimiter");
 const { sendContactMessage } = require("../controllers/contact");
 const setUploadType = require("../middlewares/setUploadType");
 const createUpload = require("../middlewares/upload");
@@ -54,8 +57,13 @@ router.post("/photos/found", validateSearch, findPhoto);
 router.put("/photos/:photoId/views", validatePhotoRequest, increaseViews);
 
 router.get("/hashtags", getHashtags);
-router.post("/hashtags", validateAddHashtag, addHashtag);
-router.patch("/hashtags", validateUpdateHashtag, updateHashtag);
+router.post("/hashtags", hashtagRateLimiter, validateAddHashtag, addHashtag);
+router.patch(
+  "/hashtags",
+  hashtagRateLimiter,
+  validateUpdateHashtag,
+  updateHashtag
+);
 
 router.get("/posts", getPosts);
 router.get("/posts/:postId", validatePostRequest, getPost);

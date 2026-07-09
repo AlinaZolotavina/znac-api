@@ -3,7 +3,9 @@ const rateLimit = require("express-rate-limit");
 const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 150,
-  message: "There are too many requests! Serever is tired :(",
+  message: {
+    message: "Too many requests. Please try again later.",
+  },
 });
 
 const contactRateLimiter = rateLimit({
@@ -14,7 +16,16 @@ const contactRateLimiter = rateLimit({
   },
 });
 
+const hashtagRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: {
+    message: "Too many hashtag updates. Please try again later.",
+  },
+});
+
 module.exports = {
   rateLimiter,
   contactRateLimiter,
+  hashtagRateLimiter,
 };
