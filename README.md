@@ -1,10 +1,10 @@
 # ZNAC API
 
-Backend API for ZNAC, a personal website that combines a portfolio, blog, photo gallery, and administration dashboard.
+REST API for ZNAC, a personal website that combines a portfolio, blog, projects showcase, photo gallery, and administration dashboard.
 
-The API provides authentication, content management, and administration features for the ZNAC platform.
+The backend was designed and developed independently, including API architecture, database modeling, authentication, security, deployment, automated testing, and server maintenance.
 
-Developed independently, including API design, database modeling, authentication, deployment, and server maintenance.
+This project is actively maintained and continuously improved.
 
 ## Related Repository
 
@@ -18,14 +18,14 @@ Frontend application: https://github.com/AlinaZolotavina/znac
 - Protected routes
 - Password hashing with bcrypt
 - Password recovery functionality
-- Profile management
+- Profile management (email and password change)
 
 **Content Management**
 
 - Create, update, and delete blog posts
 - Create, update, and delete projects
 - Upload and manage photos
-- Manage hashtags and categories
+- Manage hashtags
 
 **Security**
 
@@ -34,11 +34,14 @@ Frontend application: https://github.com/AlinaZolotavina/znac
 - Secure HTTP headers
 - CORS configuration
 - Centralized error handling
+- File type validation
+- Environment configuration validation
 
 **Monitoring & Logging**
 
 - Request logging
 - Error logging
+- Health check endpoints
 - Process management with PM2
 
 ## Technologies
@@ -51,13 +54,17 @@ Frontend application: https://github.com/AlinaZolotavina/znac
 
 **_Validation:_** Joi, celebrate, validator
 
+**_File Upload:_** Multer, file-type
+
 **_Monitoring & Logging:_** Winston, express-winston, PM2
+
+**_Testing:_** Jest, Supertest, MongoDB Memory Server
 
 **_Development Tools:_** ESLint, nodemon, dotenv
 
 ## Requirements
 
-- Node.js 22.x
+- Node.js 22+
 - MongoDB 8+
 
 ## Installation
@@ -97,6 +104,14 @@ Start in production mode:
 npm start
 ```
 
+## Running Tests
+
+Run tests:
+
+```bash
+npm test
+```
+
 ## Health Checks
 
 ```text
@@ -114,6 +129,7 @@ Deployment setup includes:
 - Reverse proxy with Nginx
 - Environment-based configuration
 - SSL-secured communication
+- Health check endpoints
 
 ## PM2
 
@@ -192,5 +208,5 @@ curl https://api.znac.org/ready
 ## Future Improvements
 
 - Migration to TypeScript
-- Automated testing
-- Performance optimization
+- Migration to cursor pagination when required
+- Cloud object storage for uploaded files
