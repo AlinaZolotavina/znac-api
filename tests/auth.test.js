@@ -2,7 +2,7 @@ jest.mock("../utils/nodemailerTransporter", () => ({
   sendMail: jest.fn().mockResolvedValue(),
 }));
 
-const request = require("supertest");
+const request = require("./helpers/requestWithOrigin");
 const mongo = require("./helpers/setupMongo");
 const app = require("../app");
 const transporter = require("../utils/nodemailerTransporter");

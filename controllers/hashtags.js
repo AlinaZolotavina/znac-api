@@ -1,7 +1,11 @@
 const getPagination = require("../utils/pagination");
 const normalizeHashtagName = require("../utils/normalizeHashtagName");
 const NotFoundError = require("../errors/not-found-err");
-const { HASHTAG_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
+const ConflictError = require("../errors/conflict-err");
+const {
+  CONFLICT_HASHTAG_ERROR_MSG,
+  HASHTAG_NOT_FOUND_ERROR_MSG,
+} = require("../utils/constants");
 const Hashtag = require("../models/hashtag");
 
 const getHashtags = async (req, res, next) => {
@@ -28,7 +32,13 @@ const addHashtag = (req, res, next) => {
 
   Hashtag.create({ name })
     .then((hashtag) => res.status(201).send(hashtag))
-    .catch(next);
+    .catch((err) => {
+      if (err.code === 11000) {
+        return next(new ConflictError(CONFLICT_HASHTAG_ERROR_MSG));
+      }
+
+      return next(err);
+    });
 };
 
 const updateHashtag = (req, res, next) => {

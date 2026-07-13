@@ -1,4 +1,4 @@
-const request = require("supertest");
+const request = require("./helpers/requestWithOrigin");
 const mongo = require("./helpers/setupMongo");
 const app = require("../app");
 
@@ -8,8 +8,15 @@ const Hashtag = require("../models/hashtag");
 const createUser = require("./helpers/createUser");
 const login = require("./helpers/login");
 const createHashtag = require("./helpers/createHashtag");
+const {
+  CONFLICT_HASHTAG_ERROR_MSG,
+  HASHTAG_MAX_LENGTH,
+} = require("../utils/constants");
 
-beforeAll(mongo.connect);
+beforeAll(async () => {
+  await mongo.connect();
+  await Hashtag.init();
+});
 
 afterEach(async () => {
   await Promise.all([User.deleteMany({}), Hashtag.deleteMany({})]);
@@ -91,17 +98,10 @@ describe("Hashtags", () => {
   });
 
   describe("POST /hashtags", () => {
-    test("should create a hashtag", async () => {
-      await createUser();
-
-      const cookie = await login();
-
-      const response = await request(app)
-        .post("/hashtags")
-        .set("Cookie", cookie)
-        .send({
-          newHashtag: "node",
-        });
+    test("should create a public hashtag without authentication", async () => {
+      const response = await request(app).post("/hashtags").send({
+        newHashtag: "node",
+      });
 
       expect(response.status).toBe(201);
 
@@ -140,6 +140,33 @@ describe("Hashtags", () => {
       expect(saved.name).toBe("node");
     });
 
+    test("should reject duplicate hashtag", async () => {
+      await createHashtag({
+        name: "node",
+      });
+
+      const response = await request(app).post("/hashtags").send({
+        newHashtag: "  Node  ",
+      });
+
+      expect(response.status).toBe(409);
+      expect(response.body.message).toBe(CONFLICT_HASHTAG_ERROR_MSG);
+      expect(await Hashtag.countDocuments()).toBe(1);
+    });
+
+    test.each([
+      ["empty hashtag", "   "],
+      ["too short hashtag", "n"],
+      ["too long hashtag", "a".repeat(HASHTAG_MAX_LENGTH + 1)],
+    ])("should reject %s", async (_caseName, newHashtag) => {
+      const response = await request(app).post("/hashtags").send({
+        newHashtag,
+      });
+
+      expect(response.status).toBe(400);
+      expect(await Hashtag.countDocuments()).toBe(0);
+    });
+
     test("should reject invalid hashtag", async () => {
       await createUser();
 
@@ -154,6 +181,16 @@ describe("Hashtags", () => {
 
       expect(response.status).toBe(400);
 
+      expect(await Hashtag.countDocuments()).toBe(0);
+    });
+
+    test("should reject multiple fields in one request", async () => {
+      const response = await request(app).post("/hashtags").send({
+        newHashtag: "node",
+        anotherHashtag: "react",
+      });
+
+      expect(response.status).toBe(400);
       expect(await Hashtag.countDocuments()).toBe(0);
     });
   });
@@ -237,6 +274,23 @@ describe("Hashtags", () => {
         .send({
           hashtagName: "node-js",
         });
+
+      expect(response.status).toBe(400);
+    });
+
+    test("should reject empty hashtag after trim", async () => {
+      const response = await request(app).patch("/hashtags").send({
+        hashtagName: "   ",
+      });
+
+      expect(response.status).toBe(400);
+    });
+
+    test("should reject multiple fields in one update request", async () => {
+      const response = await request(app).patch("/hashtags").send({
+        hashtagName: "node",
+        anotherHashtag: "react",
+      });
 
       expect(response.status).toBe(400);
     });

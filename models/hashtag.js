@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 const { validateHashtag } = require("../utils/validateHashtag");
-const { INVALID_HASHTAG_ERROR_MSG } = require("../utils/constants");
+const {
+  HASHTAG_MAX_LENGTH,
+  HASHTAG_MIN_LENGTH,
+  INVALID_HASHTAG_ERROR_MSG,
+} = require("../utils/constants");
 
 const hashtagSchema = new mongoose.Schema({
   name: {
@@ -10,8 +14,8 @@ const hashtagSchema = new mongoose.Schema({
       validator: validateHashtag,
       message: INVALID_HASHTAG_ERROR_MSG,
     },
-    minLength: 2,
-    maxLength: 30,
+    minLength: HASHTAG_MIN_LENGTH,
+    maxLength: HASHTAG_MAX_LENGTH,
   },
   createdAt: {
     type: Date,
@@ -20,5 +24,6 @@ const hashtagSchema = new mongoose.Schema({
 });
 
 hashtagSchema.index({ createdAt: -1 });
+hashtagSchema.index({ name: 1 }, { unique: true });
 
 module.exports = mongoose.model("hashtag", hashtagSchema);

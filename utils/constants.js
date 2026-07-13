@@ -45,8 +45,11 @@ const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 
 const NO_PHOTO_TO_UPLOAD_ERROR_MSG = "No photo to upload";
 const HASHTAG_NOT_FOUND_ERROR_MSG = "Hashtag not found";
+const CONFLICT_HASHTAG_ERROR_MSG = "Hashtag already exists";
 const INVALID_HASHTAG_ERROR_MSG =
   "Only letters, numbers and underscores are allowed for hashtags";
+const HASHTAG_MIN_LENGTH = 2;
+const HASHTAG_MAX_LENGTH = 30;
 
 module.exports = {
   INTERNAL_SERVER_ERROR,
@@ -88,5 +91,8 @@ module.exports = {
   WARNING_UPDATE_EMAIL_TEXT,
   NO_PHOTO_TO_UPLOAD_ERROR_MSG,
   HASHTAG_NOT_FOUND_ERROR_MSG,
+  CONFLICT_HASHTAG_ERROR_MSG,
   INVALID_HASHTAG_ERROR_MSG,
+  HASHTAG_MIN_LENGTH,
+  HASHTAG_MAX_LENGTH,
 };

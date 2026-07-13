@@ -1,4 +1,4 @@
-const HASHTAG_REGEX = /^[A-Za-zА-Яа-я0-9_]*$/;
+const HASHTAG_REGEX = /^[A-Za-zА-Яа-яЁё0-9_]+$/u;
 
 const validateHashtag = (hashtag) => HASHTAG_REGEX.test(String(hashtag));
 

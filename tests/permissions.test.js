@@ -1,4 +1,4 @@
-const request = require("supertest");
+const request = require("./helpers/requestWithOrigin");
 const mongo = require("./helpers/setupMongo");
 const app = require("../app");
 
