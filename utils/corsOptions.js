@@ -1,4 +1,4 @@
-const defaultAllowedOrigins = ["http://localhost:3000"];
+const defaultAllowedOrigins = ["http://localhost", "http://localhost:3000"];
 
 const allowedOrigins = new Set(
   (process.env.CLIENT_URL || defaultAllowedOrigins.join(","))

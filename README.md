@@ -44,6 +44,21 @@ Frontend application: https://github.com/AlinaZolotavina/znac
 - Health check endpoints
 - Process management with PM2
 
+## Architecture
+
+```
+Browser
+    │
+    ▼
+ Nginx
+    │
+    ▼
+ Express API
+    │
+    ▼
+    MongoDB (external)
+```
+
 ## Technologies
 
 **_Backend:_** Node.js, Express.js, REST API
@@ -60,12 +75,16 @@ Frontend application: https://github.com/AlinaZolotavina/znac
 
 **_Testing:_** Jest, Supertest, MongoDB Memory Server
 
-**_Development Tools:_** ESLint, nodemon, dotenv
+**_Development:_** Docker, Docker Compose, dotenv, ESLint, nodemon
 
 ## Requirements
 
+For local development:
+
 - Node.js 22+
 - MongoDB 8+
+
+When running the complete application through Docker Compose, these dependencies are provided by the containerized environment (except MongoDB if it runs externally).
 
 ## Installation
 
@@ -90,21 +109,19 @@ cp .env.example .env
 
 Fill in the required environment variables before starting the application.
 
-## Running the Application
+## Running
 
-Start in development mode:
+Development:
 
 ```bash
 npm run dev
 ```
 
-Start in production mode:
+Production:
 
 ```bash
 npm start
 ```
-
-## Running Tests
 
 Run tests:
 
@@ -112,26 +129,42 @@ Run tests:
 npm test
 ```
 
+## Docker
+
+The API is designed to run as part of the complete Docker Compose stack.
+
+From the root project directory:
+
+```bash
+docker compose up --build
+```
+
+The API is exposed internally and is accessed through the Nginx reverse proxy.
+
+## Deployment
+
+The production deployment uses:
+
+- Docker
+- Nginx as a reverse proxy
+- PM2 process management
+- MongoDB
+- Environment-based configuration
+- SSL
+- Health checks
+
 ## Health Checks
+
+Health endpoints are used by deployment infrastructure and monitoring systems to verify application availability and readiness.
 
 ```text
 GET /health
 GET /ready
 ```
 
-## Deployment
-
-The API is deployed on AWS Lightsail and runs behind Nginx.
-
-Deployment setup includes:
-
-- PM2 process management
-- Reverse proxy with Nginx
-- Environment-based configuration
-- SSL-secured communication
-- Health check endpoints
-
 ## PM2
+
+PM2 is used only for production deployment on the server.
 
 Start application:
 
@@ -151,7 +184,9 @@ Save PM2 configuration:
 pm2 save
 ```
 
-## Backup Procedure
+## Operational Procedures
+
+### Backup
 
 Create a MongoDB backup:
 
@@ -163,7 +198,7 @@ The command creates a backup of all MongoDB collections in the `backup` director
 
 It is recommended to create backups before major releases and database migrations.
 
-## Restore Procedure
+### Restore
 
 Restore the database from a backup:
 
@@ -175,7 +210,7 @@ This command restores the database from a previously created backup.
 
 Always test restoration on a staging environment before restoring production data.
 
-## Rollback Procedure
+### Rollback
 
 If a deployment fails:
 
@@ -210,3 +245,4 @@ curl https://api.znac.org/ready
 - Migration to TypeScript
 - Migration to cursor pagination when required
 - Cloud object storage for uploaded files
+- API documentation generation
