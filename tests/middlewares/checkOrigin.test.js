@@ -3,8 +3,7 @@ const corsOptions = require("../../utils/corsOptions");
 
 const { FORBIDDEN_ORIGIN_ERROR_MSG } = require("../../utils/constants");
 
-const allowedOrigin =
-  process.env.CLIENT_URL || [...corsOptions.allowedOrigins][0];
+const allowedOrigin = [...corsOptions.allowedOrigins][0];
 
 describe("checkOrigin", () => {
   let req;

@@ -1,0 +1,57 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      API_URL: http://localhost:4000/
+      CLIENT_URL: http://localhost:3000
+      CONTACT_FORM_TO_EMAIL: test@example.com
+      DB_URL: mongodb://localhost:27017/znac-test
+      JWT_RESET_PASSWORD: test-reset-secret
+      JWT_SECRET: test-jwt-secret
+      JWT_UPDATE_EMAIL: test-update-email-secret
+      NODEMAILER_HOST: smtp.example.com
+      NODEMAILER_PASSWORD: test-password
+      NODEMAILER_SERVICE: test
+      NODEMAILER_USER: test@example.com
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint -- .
+
+      - name: Run tests
+        run: npm test
+
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger production deploy
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.ZNAC_PROJECT_DEPLOY_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/AlinaZolotavina/znac-project/actions/workflows/deploy.yml/dispatches \
+            -d '{"ref":"main"}'

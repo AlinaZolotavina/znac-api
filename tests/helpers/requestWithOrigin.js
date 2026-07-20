@@ -2,7 +2,7 @@ const request = require("supertest");
 const corsOptions = require("../../utils/corsOptions");
 
 const unsafeMethods = new Set(["post", "put", "patch", "delete"]);
-const testOrigin = process.env.CLIENT_URL || [...corsOptions.allowedOrigins][0];
+const testOrigin = [...corsOptions.allowedOrigins][0];
 
 const requestWithOrigin = (app) => {
   const client = request(app);
