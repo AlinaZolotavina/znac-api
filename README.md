@@ -1,99 +1,136 @@
 # ZNAC API
 
-REST API for ZNAC, a personal website that combines a portfolio, blog, projects showcase, photo gallery, and administration dashboard.
+[Russian version](README.ru.md)
 
-The backend was designed and developed independently, including API architecture, database modeling, authentication, security, deployment, automated testing, and server maintenance.
+Express REST API for ZNAC, a personal website that combines a portfolio, blog, projects showcase, photo gallery, and administration dashboard.
 
-This project is actively maintained and continuously improved.
+Live API is served through the main domain:
 
-## Related Repository
+```text
+https://znac.org/api
+```
 
-Frontend application: https://github.com/AlinaZolotavina/znac
+## Related Repositories
+
+- Infrastructure and deployment: https://github.com/AlinaZolotavina/znac-project
+- Frontend: https://github.com/AlinaZolotavina/znac
+
+## Responsibilities
+
+- Provide REST endpoints for frontend data and administration flows.
+- Authenticate users with JWT stored in cookies.
+- Validate requests and uploaded files.
+- Store content in MongoDB through Mongoose models.
+- Serve uploaded files through the backend and Nginx proxy.
+- Run backend CI and trigger production deployment after successful checks.
 
 ## Features
 
-**Authentication & Authorization**
-
-- User authentication using JWT
-- Protected routes
-- Password hashing with bcrypt
-- Password recovery functionality
-- Profile management (email and password change)
-
-**Content Management**
-
-- Create, update, and delete blog posts
-- Create, update, and delete projects
-- Upload and manage photos
-- Manage hashtags
-
-**Security**
-
-- Request validation
-- Rate limiting
-- Secure HTTP headers
-- CORS configuration
-- Centralized error handling
-- File type validation
-- Environment configuration validation
-
-**Monitoring & Logging**
-
-- Request logging
-- Error logging
-- Health check endpoints
-- Process management with PM2
+- Authentication, logout, profile, password recovery, and email update.
+- Public content endpoints for posts, projects, photos, hashtags, and contact form.
+- Protected administration endpoints for creating, updating, and deleting content.
+- Photo and post image upload.
+- Rate limiting for sensitive and public-write endpoints.
+- CORS and Origin validation.
+- Centralized error handling.
+- Request and error logging.
+- Health and readiness endpoints.
 
 ## Architecture
 
+```text
+Express app
+  |
+  v
+Routes
+  |-- public content routes
+  |-- auth routes
+  |-- protected admin routes
+  |
+  v
+Controllers
+  |
+  v
+Services / utilities
+  |
+  v
+Mongoose models
+  |
+  v
+MongoDB on AWS host
 ```
+
+Production architecture:
+
+```text
 Browser
-    │
-    ▼
- Nginx
-    │
-    ▼
- Express API
-    │
-    ▼
-    MongoDB (external)
+  |
+  v
+Nginx container from znac-project
+  |
+  v
+Express backend container
+  |
+  v
+MongoDB on host through host.docker.internal
 ```
 
-## Technologies
+## Repository Layout
 
-**_Backend:_** Node.js, Express.js, REST API
+```text
+znac-api/
+  .github/workflows/ci.yml
+  controllers/
+  errors/
+  middlewares/
+  models/
+  routes/
+  services/
+  tests/
+  utils/
+  Dockerfile
+  server.js
+  app.js
+```
 
-**_Database:_** MongoDB, Mongoose
+## Environment
 
-**_Authentication & Security:_** JSON Web Token (JWT), bcryptjs, helmet, cors, express-rate-limit
-
-**_Validation:_** Joi, celebrate, validator
-
-**_File Upload:_** Multer, file-type
-
-**_Monitoring & Logging:_** Winston, express-winston, PM2
-
-**_Testing:_** Jest, Supertest, MongoDB Memory Server
-
-**_Development:_** Docker, Docker Compose, dotenv, ESLint, nodemon
-
-## Requirements
-
-For local development:
-
-- Node.js 22+
-- MongoDB 8+
-
-When running the complete application through Docker Compose, these dependencies are provided by the containerized environment (except MongoDB if it runs externally).
-
-## Installation
-
-Clone the repository:
+Create a local environment file from the example:
 
 ```bash
-git clone https://github.com/AlinaZolotavina/znac-api.git
-cd znac-api
+cp .env.example .env
 ```
+
+Production Docker deployment uses:
+
+```text
+.env.docker
+```
+
+This file must stay on the server and must not be committed.
+
+Important variables:
+
+```text
+PORT
+DB_URL
+CLIENT_URL
+API_URL
+JWT_SECRET
+JWT_RESET_PASSWORD
+JWT_UPDATE_EMAIL
+NODEMAILER_HOST
+NODEMAILER_USER
+NODEMAILER_PASSWORD
+CONTACT_FORM_TO_EMAIL
+```
+
+## Development
+
+Requirements:
+
+- Node.js 22+
+- MongoDB 8+ for local development
 
 Install dependencies:
 
@@ -101,26 +138,24 @@ Install dependencies:
 npm install
 ```
 
-Create an environment file:
-
-```bash
-cp .env.example .env
-```
-
-Fill in the required environment variables before starting the application.
-
-## Running
-
-Development:
+Start development server:
 
 ```bash
 npm run dev
 ```
 
-Production:
+Start production server locally:
 
 ```bash
 npm start
+```
+
+## Testing
+
+Run lint:
+
+```bash
+npm run lint -- .
 ```
 
 Run tests:
@@ -129,64 +164,77 @@ Run tests:
 npm test
 ```
 
-## Docker
-
-The API is designed to run as part of the complete Docker Compose stack.
-
-From the root project directory:
+Run tests in watch mode:
 
 ```bash
-docker compose up --build
+npm run test:watch
 ```
 
-The API is exposed internally and is accessed through the Nginx reverse proxy.
+Tests use Jest, Supertest, and MongoDB Memory Server.
 
-## Deployment
+## Docker
 
-The production deployment uses:
+The API has its own Dockerfile and runs as the `backend` service in `znac-project/docker-compose.yml`.
 
-- Docker
-- Nginx as a reverse proxy
-- PM2 process management
-- MongoDB
-- Environment-based configuration
-- SSL
-- Health checks
+Run the full production-like stack from `znac-project`:
+
+```bash
+docker compose up -d --build
+```
+
+The backend is exposed only inside the Docker network and is reached through Nginx:
+
+```text
+https://znac.org/api/*
+```
+
+## CI/CD
+
+GitHub Actions workflow:
+
+```text
+.github/workflows/ci.yml
+```
+
+On push or pull request to `main`, CI runs:
+
+```text
+npm ci
+npm run lint -- .
+npm test
+```
+
+On successful push to `main`, the workflow triggers production deployment in `znac-project`.
+
+Deployment flow:
+
+```text
+Push to znac-api/main
+  |
+  v
+Backend CI
+  |
+  v
+Trigger znac-project Deploy
+  |
+  v
+AWS Lightsail docker compose up -d --build
+```
+
+Required GitHub secret in this repository:
+
+```text
+ZNAC_PROJECT_DEPLOY_TOKEN
+```
 
 ## Health Checks
-
-Health endpoints are used by deployment infrastructure and monitoring systems to verify application availability and readiness.
 
 ```text
 GET /health
 GET /ready
 ```
 
-## PM2
-
-PM2 is used only for production deployment on the server.
-
-Start application:
-
-```bash
-pm2 start ecosystem.config.js
-```
-
-Restart application:
-
-```bash
-pm2 restart app
-```
-
-Save PM2 configuration:
-
-```bash
-pm2 save
-```
-
 ## Operational Procedures
-
-### Backup
 
 Create a MongoDB backup:
 
@@ -194,55 +242,25 @@ Create a MongoDB backup:
 mongodump --uri="$DB_URL" --out ./backup
 ```
 
-The command creates a backup of all MongoDB collections in the `backup` directory.
-
-It is recommended to create backups before major releases and database migrations.
-
-### Restore
-
-Restore the database from a backup:
+Restore a MongoDB backup:
 
 ```bash
 mongorestore --uri="$DB_URL" ./backup
 ```
 
-This command restores the database from a previously created backup.
-
-Always test restoration on a staging environment before restoring production data.
-
-### Rollback
-
-If a deployment fails:
-
-1. Connect to the server.
-2. Checkout the previous stable commit:
+Rollback on the server:
 
 ```bash
-git checkout <commit-hash>
+git checkout <commit>
+docker compose up -d --build
 ```
 
-3. Install dependencies:
-
-```bash
-npm install
-```
-
-4. Restart the application:
-
-```bash
-pm2 restart app
-```
-
-5. Verify application health:
-
-```bash
-curl https://api.znac.org/health
-curl https://api.znac.org/ready
-```
+For full production rollback, run the commands from `/home/ubuntu/znac-project` and check out the required commits in the affected repositories.
 
 ## Future Improvements
 
-- Migration to TypeScript
-- Migration to cursor pagination when required
-- Cloud object storage for uploaded files
-- API documentation generation
+- Migration to TypeScript.
+- API documentation generation.
+- Cursor pagination when content volume requires it.
+- Cloud object storage for uploaded files.
+- Scheduled database backups.
