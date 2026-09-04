@@ -373,8 +373,14 @@ describe("Photos", () => {
       const fileName = "photo-test-delete.jpg";
 
       const filePath = path.join(__dirname, "../uploads/gallery", fileName);
+      const thumbnailPath = path.join(
+        __dirname,
+        "../uploads/gallery/thumbnails",
+        "photo-test-delete-thumb.webp"
+      );
 
       await fs.writeFile(filePath, "test");
+      await fs.writeFile(thumbnailPath, "thumbnail");
 
       const photo = await createPhoto(user._id, {
         filename: fileName,
@@ -389,6 +395,7 @@ describe("Photos", () => {
       expect(response.status).toBe(200);
 
       await expect(fs.stat(filePath)).rejects.toThrow();
+      await expect(fs.stat(thumbnailPath)).rejects.toThrow();
     });
   });
 });

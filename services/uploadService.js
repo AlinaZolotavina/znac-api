@@ -3,6 +3,7 @@ const uploadPhoto = (files, uploadType) =>
     filename: file.filename,
     size: file.size,
     url: `${process.env.API_URL}uploads/${uploadType}/${file.filename}`,
+    thumbnail: `${process.env.API_URL}uploads/${uploadType}/thumbnails/${file.thumbnailFilename}`,
   }));
 
 module.exports = {

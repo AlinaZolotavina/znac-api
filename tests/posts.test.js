@@ -1,6 +1,8 @@
 const request = require("./helpers/requestWithOrigin");
 const mongo = require("./helpers/setupMongo");
 const mongoose = require("mongoose");
+const fs = require("fs/promises");
+const path = require("path");
 const app = require("../app");
 
 const User = require("../models/user");
@@ -20,6 +22,28 @@ beforeAll(mongo.connect);
 
 afterEach(async () => {
   await Promise.all([User.deleteMany({}), Post.deleteMany({})]);
+  await Promise.all([
+    fs.rm(path.join(__dirname, "../uploads/posts/post-test-update.jpg"), {
+      force: true,
+    }),
+    fs.rm(
+      path.join(
+        __dirname,
+        "../uploads/posts/thumbnails/post-test-update-thumb.webp"
+      ),
+      { force: true }
+    ),
+    fs.rm(path.join(__dirname, "../uploads/posts/post-test-delete.jpg"), {
+      force: true,
+    }),
+    fs.rm(
+      path.join(
+        __dirname,
+        "../uploads/posts/thumbnails/post-test-delete-thumb.webp"
+      ),
+      { force: true }
+    ),
+  ]);
 });
 
 afterAll(mongo.disconnect);
@@ -298,6 +322,39 @@ describe("Posts", () => {
 
       expect(saved.hashtags).toEqual(["node"]);
     });
+
+    test("should delete the old thumbnail when replacing an uploaded photo", async () => {
+      const user = await createUser();
+
+      const cookie = await login();
+      const filename = "post-test-update.jpg";
+      const filePath = `uploads/posts/${filename}`;
+      const thumbnailPath = `uploads/posts/thumbnails/post-test-update-thumb.webp`;
+
+      await fs.writeFile(filePath, "photo");
+      await fs.writeFile(thumbnailPath, "thumbnail");
+
+      const post = await createPost(user._id, {
+        photoFilename: filename,
+        photoLink: undefined,
+      });
+
+      const response = await request(app)
+        .patch(`/posts/${post._id}`)
+        .set("Cookie", cookie)
+        .send({
+          newTheme: post.theme,
+          newIcon: post.icon,
+          newTitle: post.title,
+          newPhotoLink: "https://example.com/new-photo.jpg",
+          newHashtags: "node express",
+          newText: post.text,
+        });
+
+      expect(response.status).toBe(200);
+      await expect(fs.stat(filePath)).rejects.toThrow();
+      await expect(fs.stat(thumbnailPath)).rejects.toThrow();
+    });
   });
 
   describe("DELETE /posts/:id", () => {
@@ -331,6 +388,31 @@ describe("Posts", () => {
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe(POST_NOT_FOUND_ERROR_MSG);
+    });
+
+    test("should delete uploaded photo and thumbnail", async () => {
+      const user = await createUser();
+
+      const cookie = await login();
+      const filename = "post-test-delete.jpg";
+      const filePath = `uploads/posts/${filename}`;
+      const thumbnailPath = `uploads/posts/thumbnails/post-test-delete-thumb.webp`;
+
+      await fs.writeFile(filePath, "photo");
+      await fs.writeFile(thumbnailPath, "thumbnail");
+
+      const post = await createPost(user._id, {
+        photoFilename: filename,
+        photoLink: undefined,
+      });
+
+      const response = await request(app)
+        .delete(`/posts/${post._id}`)
+        .set("Cookie", cookie);
+
+      expect(response.status).toBe(200);
+      await expect(fs.stat(filePath)).rejects.toThrow();
+      await expect(fs.stat(thumbnailPath)).rejects.toThrow();
     });
   });
 });

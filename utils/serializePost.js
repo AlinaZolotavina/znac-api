@@ -1,4 +1,5 @@
 const resolvePostPhotoUrl = require("./resolvePostPhotoUrl");
+const resolveThumbnailUrl = require("./resolveThumbnailUrl");
 
 const serializePost = (post) => {
   const postObject = post.toObject();
@@ -6,6 +7,7 @@ const serializePost = (post) => {
   return {
     ...postObject,
     photoLink: resolvePostPhotoUrl(postObject),
+    thumbnail: resolveThumbnailUrl(postObject, "posts"),
   };
 };
 

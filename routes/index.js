@@ -20,6 +20,7 @@ const createUpload = require("../middlewares/upload");
 const galleryUpload = createUpload("gallery");
 const postUpload = createUpload("posts");
 const validateUploadedFiles = require("../middlewares/validateUploadedFiles");
+const createThumbnails = require("../middlewares/createThumbnails");
 const {
   validatePhotoRequest,
   validatePostRequest,
@@ -85,6 +86,7 @@ router.post(
   setUploadType("posts"),
   postUpload.array("images", 10),
   validateUploadedFiles,
+  createThumbnails("posts"),
   uploadPhoto
 );
 router.post(
@@ -92,6 +94,7 @@ router.post(
   setUploadType("gallery"),
   galleryUpload.array("photos", 10),
   validateUploadedFiles,
+  createThumbnails("gallery"),
   uploadPhoto
 );
 router.use(userRouter);

@@ -13,19 +13,50 @@ const { NO_PHOTO_TO_UPLOAD_ERROR_MSG } = require("../utils/constants");
 
 const fixtures = path.join(__dirname, "fixtures");
 const uploadsDir = path.join(__dirname, "..", "uploads", "gallery");
+const thumbnailsDir = path.join(uploadsDir, "thumbnails");
+const postUploadsDir = path.join(__dirname, "..", "uploads", "posts");
+const postThumbnailsDir = path.join(postUploadsDir, "thumbnails");
 
-beforeAll(mongo.connect);
+const getUploadedFiles = async (directory) =>
+  (await fs.readdir(directory)).filter((file) => file !== ".gitkeep");
 
-afterEach(async () => {
-  await User.deleteMany({});
+const removeUploadedFile = (directory, file) =>
+  fs.rm(path.join(directory, file), {
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  });
 
-  const files = (await fs.readdir(uploadsDir)).filter(
-    (file) => file !== ".gitkeep"
+const cleanUploads = async () => {
+  const directories = [
+    { directory: uploadsDir, exclude: "thumbnails" },
+    { directory: thumbnailsDir },
+    { directory: postUploadsDir, exclude: "thumbnails" },
+    { directory: postThumbnailsDir },
+  ];
+  const files = await Promise.all(
+    directories.map(async ({ directory, exclude }) => ({
+      directory,
+      files: (await getUploadedFiles(directory)).filter(
+        (file) => file !== exclude
+      ),
+    }))
   );
 
   await Promise.all(
-    files.map((file) => fs.unlink(path.join(uploadsDir, file)))
+    files.flatMap(({ directory, files: directoryFiles }) =>
+      directoryFiles.map((file) => removeUploadedFile(directory, file))
+    )
   );
+};
+
+beforeAll(mongo.connect);
+
+beforeEach(cleanUploads);
+
+afterEach(async () => {
+  await User.deleteMany({});
+  await cleanUploads();
 });
 
 afterAll(mongo.disconnect);
@@ -53,15 +84,19 @@ describe("Upload", () => {
           filename: expect.stringMatching(/\.jpg$/),
           size: expect.any(Number),
           url: expect.stringContaining("/uploads/gallery/"),
+          thumbnail: expect.stringContaining("/uploads/gallery/thumbnails/"),
         })
       );
 
-      const uploaded = (await fs.readdir(uploadsDir)).filter(
-        (file) => file !== ".gitkeep"
+      const uploaded = (await getUploadedFiles(uploadsDir)).filter(
+        (file) => file !== "thumbnails"
       );
+      const thumbnails = await getUploadedFiles(thumbnailsDir);
 
       expect(uploaded).toHaveLength(1);
       expect(uploaded[0]).toMatch(/\.jpg$/);
+      expect(thumbnails).toHaveLength(1);
+      expect(thumbnails[0]).toMatch(/-thumb\.webp$/);
     });
 
     test("should upload multiple images", async () => {
@@ -78,13 +113,18 @@ describe("Upload", () => {
 
       expect(response.body.data).toHaveLength(2);
 
-      const uploaded = (await fs.readdir(uploadsDir)).filter(
-        (file) => file !== ".gitkeep"
+      const uploaded = (await getUploadedFiles(uploadsDir)).filter(
+        (file) => file !== "thumbnails"
       );
+      const thumbnails = await getUploadedFiles(thumbnailsDir);
 
       expect(uploaded).toHaveLength(2);
       expect(uploaded.some((file) => file.endsWith(".jpg"))).toBe(true);
       expect(uploaded.some((file) => file.endsWith(".webp"))).toBe(true);
+      expect(thumbnails).toHaveLength(2);
+      expect(thumbnails.every((file) => file.endsWith("-thumb.webp"))).toBe(
+        true
+      );
     });
 
     test("should reject invalid file content", async () => {
@@ -99,11 +139,13 @@ describe("Upload", () => {
       expect(response.status).toBe(400);
       expect(response.body.message).toBe("Invalid file content: fake.jpg");
 
-      const uploaded = (await fs.readdir(uploadsDir)).filter(
-        (file) => file !== ".gitkeep"
+      const uploaded = (await getUploadedFiles(uploadsDir)).filter(
+        (file) => file !== "thumbnails"
       );
+      const thumbnails = await getUploadedFiles(thumbnailsDir);
 
       expect(uploaded).toHaveLength(0);
+      expect(thumbnails).toHaveLength(0);
     });
 
     test("should reject unsupported file extension", async () => {
@@ -118,11 +160,13 @@ describe("Upload", () => {
       expect(response.status).toBe(400);
       expect(response.body.message).toBe("Unsupported file type: test.gif");
 
-      const uploaded = (await fs.readdir(uploadsDir)).filter(
-        (file) => file !== ".gitkeep"
+      const uploaded = (await getUploadedFiles(uploadsDir)).filter(
+        (file) => file !== "thumbnails"
       );
+      const thumbnails = await getUploadedFiles(thumbnailsDir);
 
       expect(uploaded).toHaveLength(0);
+      expect(thumbnails).toHaveLength(0);
     });
 
     test("should reject request without files", async () => {
@@ -136,6 +180,56 @@ describe("Upload", () => {
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(NO_PHOTO_TO_UPLOAD_ERROR_MSG);
+    });
+
+    test("should remove the whole batch when one file has invalid content", async () => {
+      await createUser();
+      const cookie = await login();
+
+      const response = await request(app)
+        .post("/upload")
+        .set("Cookie", cookie)
+        .attach("photos", path.join(fixtures, "image.jpg"))
+        .attach("photos", path.join(fixtures, "fake.jpg"));
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("Invalid file content: fake.jpg");
+
+      const uploaded = (await getUploadedFiles(uploadsDir)).filter(
+        (file) => file !== "thumbnails"
+      );
+      const thumbnails = await getUploadedFiles(thumbnailsDir);
+
+      expect(uploaded).toHaveLength(0);
+      expect(thumbnails).toHaveLength(0);
+    });
+
+    test("should upload post images and create thumbnails", async () => {
+      await createUser();
+      const cookie = await login();
+
+      const response = await request(app)
+        .post("/posts/image")
+        .set("Cookie", cookie)
+        .attach("images", path.join(fixtures, "image.jpg"));
+
+      expect(response.status).toBe(201);
+      expect(response.body.data).toEqual([
+        expect.objectContaining({
+          filename: expect.stringMatching(/\.jpg$/),
+          url: expect.stringContaining("/uploads/posts/"),
+          thumbnail: expect.stringContaining("/uploads/posts/thumbnails/"),
+        }),
+      ]);
+
+      const uploadedPostFiles = (await getUploadedFiles(postUploadsDir)).filter(
+        (file) => file !== "thumbnails"
+      );
+
+      expect(uploadedPostFiles).toHaveLength(1);
+      expect(await getUploadedFiles(postThumbnailsDir)).toEqual([
+        expect.stringMatching(/-thumb\.webp$/),
+      ]);
     });
   });
 });

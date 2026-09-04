@@ -3,7 +3,8 @@ const normalizeHashtags = require("../utils/normalizeHashtags");
 const escapeRegex = require("../utils/escapeRegex");
 const serializePost = require("../utils/serializePost");
 const resolvePostPhotoPath = require("../utils/resolvePostPhotoPath");
-const fs = require("fs").promises;
+const resolveThumbnailPath = require("../utils/resolveThumbnailPath");
+const removeFiles = require("../utils/removeFiles");
 const NotFoundError = require("../errors/not-found-err");
 const { POST_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
@@ -95,15 +96,9 @@ const updatePost = async ({
   const shouldDeleteOldFile =
     !!post.photoFilename && (removePhoto || newPhotoFilename || newPhotoLink);
   const oldFilePath = shouldDeleteOldFile ? resolvePostPhotoPath(post) : null;
-
-  console.log({
-    shouldDeleteOldFile,
-    oldFilePath,
-    removePhoto,
-    newPhotoFilename,
-    newPhotoLink,
-    currentFilename: post.photoFilename,
-  });
+  const oldThumbnailPath = shouldDeleteOldFile
+    ? resolveThumbnailPath(post.photoFilename, "posts")
+    : null;
 
   post.theme = newTheme;
   post.icon = newIcon;
@@ -124,14 +119,7 @@ const updatePost = async ({
 
   await post.save();
 
-  if (oldFilePath) {
-    console.log("Deleting:", oldFilePath);
-    try {
-      await fs.unlink(oldFilePath);
-    } catch (err) {
-      console.error(`Failed to delete file ${oldFilePath}:`, err.message);
-    }
-  }
+  await removeFiles([oldFilePath, oldThumbnailPath]);
 
   return post;
 };
@@ -147,14 +135,9 @@ const deletePost = async ({ ownerId, postId }) => {
   }
 
   const filePath = resolvePostPhotoPath(post);
+  const thumbnailPath = resolveThumbnailPath(post.photoFilename, "posts");
 
-  if (filePath) {
-    try {
-      await fs.unlink(filePath);
-    } catch (err) {
-      console.error(`Failed to delete file ${filePath}:`, err.message);
-    }
-  }
+  await removeFiles([filePath, thumbnailPath]);
 
   return post;
 };

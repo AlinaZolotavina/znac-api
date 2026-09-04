@@ -1,23 +1,24 @@
-const fs = require("fs/promises");
 const FileType = require("file-type");
+const removeFiles = require("../utils/removeFiles");
 
 const getFileType = (filePath) => FileType.fromFile(filePath);
+
+const BadRequestError = require("../errors/bad-request-err");
+const { NO_PHOTO_TO_UPLOAD_ERROR_MSG } = require("../utils/constants");
 
 const validateUploadedFiles = async (req, res, next) => {
   try {
     if (!req.files?.length) {
-      return next();
+      return next(new BadRequestError(NO_PHOTO_TO_UPLOAD_ERROR_MSG));
     }
 
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
 
     for (const file of req.files) {
-      // проверяем настоящий тип файла
       const detectedType = await getFileType(file.path);
 
       if (!detectedType || !allowedMimeTypes.includes(detectedType.mime)) {
-        // удаляем подозрительный файл
-        await fs.unlink(file.path);
+        await removeFiles(req.files.map(({ path: filePath }) => filePath));
 
         return res.status(400).send({
           message: `Invalid file content: ${file.originalname}`,
@@ -27,6 +28,7 @@ const validateUploadedFiles = async (req, res, next) => {
 
     return next();
   } catch (err) {
+    await removeFiles((req.files || []).map(({ path: filePath }) => filePath));
     return next(err);
   }
 };

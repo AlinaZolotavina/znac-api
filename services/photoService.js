@@ -1,11 +1,11 @@
-const fs = require("fs/promises");
-
 const Photo = require("../models/photo");
 const NotFoundError = require("../errors/not-found-err");
 const escapeRegex = require("../utils/escapeRegex");
 const normalizeHashtags = require("../utils/normalizeHashtags");
 const resolvePhotoPath = require("../utils/resolvePhotoPath");
+const resolveThumbnailPath = require("../utils/resolveThumbnailPath");
 const serializePhoto = require("../utils/serializePhoto");
+const removeFiles = require("../utils/removeFiles");
 
 const { PHOTO_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
@@ -104,14 +104,11 @@ const deletePhoto = async ({ photoId, ownerId }) => {
   }
 
   const filePath = resolvePhotoPath(photo);
+  const thumbnailPath = resolveThumbnailPath(photo.filename, "gallery");
 
-  if (filePath) {
-    try {
-      await fs.unlink(filePath);
-    } catch (err) {
-      console.error(`Failed to delete file ${filePath}:`, err.message);
-    }
-  }
+  await removeFiles([filePath, thumbnailPath]);
+
+  return photo;
 };
 
 module.exports = {
