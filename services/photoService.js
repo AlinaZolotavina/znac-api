@@ -6,6 +6,7 @@ const resolvePhotoPath = require("../utils/resolvePhotoPath");
 const resolveThumbnailPath = require("../utils/resolveThumbnailPath");
 const serializePhoto = require("../utils/serializePhoto");
 const removeFiles = require("../utils/removeFiles");
+const ensureThumbnail = require("../utils/ensureThumbnail");
 
 const { PHOTO_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
@@ -14,6 +15,8 @@ const getPhotos = async ({ skip, limit }) => {
     Photo.find({}).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
     Photo.countDocuments(),
   ]);
+
+  await ensureThumbnail(photos, "gallery");
 
   return {
     data: photos.map(serializePhoto),
@@ -37,6 +40,8 @@ const findPhoto = async ({ skip, limit, keyWord = "" }) => {
     Photo.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
     Photo.countDocuments(filter),
   ]);
+
+  await ensureThumbnail(photos, "gallery");
 
   return {
     data: photos.map(serializePhoto),

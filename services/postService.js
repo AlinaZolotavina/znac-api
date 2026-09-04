@@ -5,6 +5,7 @@ const serializePost = require("../utils/serializePost");
 const resolvePostPhotoPath = require("../utils/resolvePostPhotoPath");
 const resolveThumbnailPath = require("../utils/resolveThumbnailPath");
 const removeFiles = require("../utils/removeFiles");
+const ensureThumbnail = require("../utils/ensureThumbnail");
 const NotFoundError = require("../errors/not-found-err");
 const { POST_NOT_FOUND_ERROR_MSG } = require("../utils/constants");
 
@@ -35,6 +36,8 @@ const getPosts = async ({ skip, limit, search = "", theme = "" }) => {
     Post.countDocuments(query),
   ]);
 
+  await ensureThumbnail(posts, "posts");
+
   return {
     data: posts.map(serializePost),
     total,
@@ -47,6 +50,8 @@ const getPost = async (postId) => {
   if (!post) {
     throw new NotFoundError(POST_NOT_FOUND_ERROR_MSG);
   }
+
+  await ensureThumbnail([post], "posts");
 
   return serializePost(post);
 };
