@@ -28,7 +28,14 @@ const validateUploadedFiles = async (req, res, next) => {
 
     return next();
   } catch (err) {
-    await removeFiles((req.files || []).map(({ path: filePath }) => filePath));
+    try {
+      await removeFiles(
+        (req.files || []).map(({ path: filePath }) => filePath)
+      );
+    } catch (cleanupError) {
+      return next(cleanupError);
+    }
+
     return next(err);
   }
 };

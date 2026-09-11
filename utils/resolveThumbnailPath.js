@@ -1,4 +1,5 @@
 const path = require("path");
+const getUploadsDirectory = require("./getUploadsDirectory");
 
 const resolveThumbnailPath = (filename, directory) => {
   if (!filename) {
@@ -8,8 +9,7 @@ const resolveThumbnailPath = (filename, directory) => {
   const thumbnailFilename = `${path.parse(filename).name}-thumb.webp`;
 
   return path.join(
-    __dirname,
-    "../uploads",
+    getUploadsDirectory(),
     directory,
     "thumbnails",
     thumbnailFilename

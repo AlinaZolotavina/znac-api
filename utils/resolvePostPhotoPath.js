@@ -1,8 +1,9 @@
 const path = require("path");
+const getUploadsDirectory = require("./getUploadsDirectory");
 
 const resolvePostPhotoPath = (post) => {
   if (post.photoFilename) {
-    return path.join(__dirname, "../uploads/posts", post.photoFilename);
+    return path.join(getUploadsDirectory(), "posts", post.photoFilename);
   }
 
   if (post.photoLink?.startsWith(`${process.env.API_URL}public/`)) {

@@ -11,6 +11,7 @@ const Post = require("../models/post");
 const createUser = require("./helpers/createUser");
 const login = require("./helpers/login");
 const createPost = require("./helpers/createPost");
+const getUploadsDirectory = require("../utils/getUploadsDirectory");
 
 const {
   POST_NOT_FOUND_ERROR_MSG,
@@ -23,23 +24,23 @@ beforeAll(mongo.connect);
 afterEach(async () => {
   await Promise.all([User.deleteMany({}), Post.deleteMany({})]);
   await Promise.all([
-    fs.rm(path.join(__dirname, "../uploads/posts/post-test-update.jpg"), {
+    fs.rm(path.join(getUploadsDirectory(), "posts/post-test-update.jpg"), {
       force: true,
     }),
     fs.rm(
       path.join(
-        __dirname,
-        "../uploads/posts/thumbnails/post-test-update-thumb.webp"
+        getUploadsDirectory(),
+        "posts/thumbnails/post-test-update-thumb.webp"
       ),
       { force: true }
     ),
-    fs.rm(path.join(__dirname, "../uploads/posts/post-test-delete.jpg"), {
+    fs.rm(path.join(getUploadsDirectory(), "posts/post-test-delete.jpg"), {
       force: true,
     }),
     fs.rm(
       path.join(
-        __dirname,
-        "../uploads/posts/thumbnails/post-test-delete-thumb.webp"
+        getUploadsDirectory(),
+        "posts/thumbnails/post-test-delete-thumb.webp"
       ),
       { force: true }
     ),
@@ -328,8 +329,11 @@ describe("Posts", () => {
 
       const cookie = await login();
       const filename = "post-test-update.jpg";
-      const filePath = `uploads/posts/${filename}`;
-      const thumbnailPath = `uploads/posts/thumbnails/post-test-update-thumb.webp`;
+      const filePath = path.join(getUploadsDirectory(), "posts", filename);
+      const thumbnailPath = path.join(
+        getUploadsDirectory(),
+        "posts/thumbnails/post-test-update-thumb.webp"
+      );
 
       await fs.writeFile(filePath, "photo");
       await fs.writeFile(thumbnailPath, "thumbnail");
@@ -395,8 +399,11 @@ describe("Posts", () => {
 
       const cookie = await login();
       const filename = "post-test-delete.jpg";
-      const filePath = `uploads/posts/${filename}`;
-      const thumbnailPath = `uploads/posts/thumbnails/post-test-delete-thumb.webp`;
+      const filePath = path.join(getUploadsDirectory(), "posts", filename);
+      const thumbnailPath = path.join(
+        getUploadsDirectory(),
+        "posts/thumbnails/post-test-delete-thumb.webp"
+      );
 
       await fs.writeFile(filePath, "photo");
       await fs.writeFile(thumbnailPath, "thumbnail");

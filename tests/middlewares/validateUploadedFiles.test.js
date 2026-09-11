@@ -31,10 +31,15 @@ describe("validateUploadedFiles", () => {
     jest.clearAllMocks();
   });
 
-  test("should call next when there are no files", async () => {
+  test("should pass an error when there are no files", async () => {
     await validateUploadedFiles(req, res, next);
 
-    expect(next).toHaveBeenCalledWith();
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "No photo to upload",
+      })
+    );
+
     expect(FileType.fromFile).not.toHaveBeenCalled();
   });
 
@@ -221,6 +226,7 @@ describe("validateUploadedFiles", () => {
 
     await validateUploadedFiles(req, res, next);
 
+    expect(fs.unlink).toHaveBeenCalledWith("/tmp/file.gif");
     expect(next).toHaveBeenCalledWith(error);
   });
 });

@@ -11,6 +11,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
 const { rateLimiter } = require("./middlewares/rateLimiter");
 const checkOrigin = require("./middlewares/checkOrigin");
+const getUploadsDirectory = require("./utils/getUploadsDirectory");
 
 const app = express();
 
@@ -25,7 +26,7 @@ app.use(
 
 app.use(
   "/uploads",
-  express.static(path.join(__dirname, "uploads"), {
+  express.static(getUploadsDirectory(), {
     index: false,
     dotfiles: "deny",
     redirect: false,

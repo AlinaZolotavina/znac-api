@@ -1,6 +1,7 @@
 const multer = require("multer");
 const crypto = require("crypto");
 const path = require("path");
+const getUploadsDirectory = require("../utils/getUploadsDirectory");
 
 const BadRequestError = require("../errors/bad-request-err");
 
@@ -13,7 +14,7 @@ const createUpload = (directory) => {
 
   const storage = multer.diskStorage({
     destination(req, file, cb) {
-      cb(null, path.join(__dirname, "../uploads", directory));
+      cb(null, path.join(getUploadsDirectory(), directory));
     },
 
     filename(req, file, cb) {

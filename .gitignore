@@ -14,7 +14,13 @@ scripts/*
 # Keep upload directory structure, ignore uploaded content
 uploads/*
 !uploads/gallery/
+!uploads/gallery/.gitkeep
+!uploads/gallery/thumbnails/
+!uploads/gallery/thumbnails/.gitkeep
 !uploads/posts/
+!uploads/posts/.gitkeep
+!uploads/posts/thumbnails/
+!uploads/posts/thumbnails/.gitkeep
 
 uploads/gallery/*
 !uploads/gallery/.gitkeep
@@ -35,3 +41,6 @@ test-jwt.js
 
 # Audit
 AUDIT.md
+
+# Jest upload sandbox
+tests/uploads-test/

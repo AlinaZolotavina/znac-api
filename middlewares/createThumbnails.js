@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs/promises");
 const sharp = require("sharp");
 const removeFiles = require("../utils/removeFiles");
+const getUploadsDirectory = require("../utils/getUploadsDirectory");
 const allowedDirectories = new Set(["gallery", "posts"]);
 
 const createThumbnails = (directory) => {
@@ -10,8 +11,7 @@ const createThumbnails = (directory) => {
   }
 
   const thumbnailsDirectory = path.join(
-    __dirname,
-    "../uploads",
+    getUploadsDirectory(),
     directory,
     "thumbnails"
   );

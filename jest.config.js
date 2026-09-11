@@ -1,3 +1,3 @@
 module.exports = {
-  setupFiles: ["dotenv/config"],
+  setupFiles: ["dotenv/config", "<rootDir>/tests/setupUploads.js"],
 };

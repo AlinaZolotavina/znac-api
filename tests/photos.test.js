@@ -12,6 +12,7 @@ const Photo = require("../models/photo");
 const createUser = require("./helpers/createUser");
 const login = require("./helpers/login");
 const createPhoto = require("./helpers/createPhoto");
+const getUploadsDirectory = require("../utils/getUploadsDirectory");
 
 const {
   PHOTO_NOT_FOUND_ERROR_MSG,
@@ -372,10 +373,10 @@ describe("Photos", () => {
 
       const fileName = "photo-test-delete.jpg";
 
-      const filePath = path.join(__dirname, "../uploads/gallery", fileName);
+      const filePath = path.join(getUploadsDirectory(), "gallery", fileName);
       const thumbnailPath = path.join(
-        __dirname,
-        "../uploads/gallery/thumbnails",
+        getUploadsDirectory(),
+        "gallery/thumbnails",
         "photo-test-delete-thumb.webp"
       );
 

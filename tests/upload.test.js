@@ -12,9 +12,9 @@ const login = require("./helpers/login");
 const { NO_PHOTO_TO_UPLOAD_ERROR_MSG } = require("../utils/constants");
 
 const fixtures = path.join(__dirname, "fixtures");
-const uploadsDir = path.join(__dirname, "..", "uploads", "gallery");
+const uploadsDir = path.join(process.env.UPLOADS_DIR, "gallery");
 const thumbnailsDir = path.join(uploadsDir, "thumbnails");
-const postUploadsDir = path.join(__dirname, "..", "uploads", "posts");
+const postUploadsDir = path.join(process.env.UPLOADS_DIR, "posts");
 const postThumbnailsDir = path.join(postUploadsDir, "thumbnails");
 
 const getUploadedFiles = async (directory) =>
