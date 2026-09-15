@@ -62,9 +62,9 @@ const logout = (req, res, next) => {
 };
 
 // Profile
-const getMe = (req, res, next) => {
+const getUserProfile = (req, res, next) => {
   userService
-    .getMe(req.user._id)
+    .getUserProfile(req.user._id)
     .then((user) => res.send(user))
     .catch(next);
 };
@@ -139,7 +139,7 @@ module.exports = {
   createUser,
   login,
   logout,
-  getMe,
+  getUserProfile,
   requestEmailUpdate,
   updateEmail,
   updatePassword,

@@ -97,7 +97,7 @@ const logout = (token) => {
 };
 
 // Profile
-const getMe = async (userId) => {
+const getUserProfile = async (userId) => {
   const user = await User.findById(userId);
 
   if (!user) {
@@ -303,7 +303,7 @@ module.exports = {
   createUser,
   login,
   logout,
-  getMe,
+  getUserProfile,
   updatePassword,
   requestEmailUpdate,
   updateEmail,

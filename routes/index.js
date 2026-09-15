@@ -11,6 +11,10 @@ const { increaseViews } = require("../controllers/photos");
 const { getPosts, getPost } = require("../controllers/posts");
 const { getProjects, getProjectHashtags } = require("../controllers/projects");
 const {
+  publicReadRateLimiter,
+  writeRateLimiter,
+  uploadRateLimiter,
+  viewRateLimiter,
   contactRateLimiter,
   hashtagRateLimiter,
 } = require("../middlewares/rateLimiter");
@@ -53,11 +57,16 @@ router.get("/ready", (req, res) => {
   });
 });
 
-router.get("/photos", getPhotos);
-router.post("/photos/found", validateSearch, findPhoto);
-router.put("/photos/:photoId/views", validatePhotoRequest, increaseViews);
+router.get("/photos", publicReadRateLimiter, getPhotos);
+router.post("/photos/found", publicReadRateLimiter, validateSearch, findPhoto);
+router.put(
+  "/photos/:photoId/views",
+  viewRateLimiter,
+  validatePhotoRequest,
+  increaseViews
+);
 
-router.get("/hashtags", getHashtags);
+router.get("/hashtags", publicReadRateLimiter, getHashtags);
 router.post("/hashtags", hashtagRateLimiter, validateAddHashtag, addHashtag);
 router.patch(
   "/hashtags",
@@ -66,11 +75,16 @@ router.patch(
   updateHashtag
 );
 
-router.get("/posts", getPosts);
-router.get("/posts/:postId", validatePostRequest, getPost);
+router.get("/posts", publicReadRateLimiter, getPosts);
+router.get(
+  "/posts/:postId",
+  publicReadRateLimiter,
+  validatePostRequest,
+  getPost
+);
 
-router.get("/projects", getProjects);
-router.get("/projecthashtags", getProjectHashtags);
+router.get("/projects", publicReadRateLimiter, getProjects);
+router.get("/projecthashtags", publicReadRateLimiter, getProjectHashtags);
 
 router.post(
   "/contact",
@@ -80,23 +94,31 @@ router.post(
 );
 
 router.use(authRouter);
+
 router.use(auth);
+
 router.post(
   "/posts/image",
+  uploadRateLimiter,
   setUploadType("posts"),
   postUpload.array("images", 10),
   validateUploadedFiles,
   createThumbnails("posts"),
   uploadPhoto
 );
+
 router.post(
   "/upload",
+  uploadRateLimiter,
   setUploadType("gallery"),
   galleryUpload.array("photos", 10),
   validateUploadedFiles,
   createThumbnails("gallery"),
   uploadPhoto
 );
+
+router.use(writeRateLimiter);
+
 router.use(userRouter);
 router.use(photoRouter);
 router.use(postRouter);

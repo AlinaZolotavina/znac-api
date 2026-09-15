@@ -5,13 +5,14 @@ const {
   validateUpdatePassword,
 } = require("../middlewares/validateRequests");
 const {
-  getMe,
+  getUserProfile,
   requestEmailUpdate,
   updateEmail,
   updatePassword,
 } = require("../controllers/users");
+const { protectedReadRateLimiter } = require("../middlewares/rateLimiter");
 
-router.get("/profile", getMe);
+router.get("/profile", protectedReadRateLimiter, getUserProfile);
 router.put(
   "/profile/update-email",
   validateRequestEmailUpdate,

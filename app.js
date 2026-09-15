@@ -9,7 +9,6 @@ const corsOptions = require("./utils/corsOptions");
 const router = require("./routes");
 const errorHandler = require("./middlewares/errorHandler");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
-const { rateLimiter } = require("./middlewares/rateLimiter");
 const checkOrigin = require("./middlewares/checkOrigin");
 const getUploadsDirectory = require("./utils/getUploadsDirectory");
 
@@ -45,8 +44,6 @@ app.use(cors(corsOptions));
 app.use(requestLogger);
 
 app.use(helmet());
-
-app.use(rateLimiter);
 
 app.use(checkOrigin);
 
