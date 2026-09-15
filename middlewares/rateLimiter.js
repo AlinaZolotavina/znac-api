@@ -4,6 +4,8 @@ const createRateLimiter = (max, message) =>
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max,
+    standardHeaders: true,
+    legacyHeaders: false,
     message: {
       message,
     },
@@ -17,19 +19,29 @@ const publicReadRateLimiter = createRateLimiter(
 const protectedReadRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: {
     message: "Too many requests. Please try again later.",
   },
 });
 
-const authRateLimiter = createRateLimiter(
-  20,
-  "Too many authentication attempts. Please try again later."
-);
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: {
+    message: "Too many authentication attempts. Please try again later.",
+  },
+});
 
 const writeRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: (req) => ["GET", "HEAD", "OPTIONS"].includes(req.method),
   message: {
     message: "Too many requests. Please try again later.",
