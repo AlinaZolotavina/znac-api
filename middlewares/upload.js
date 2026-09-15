@@ -6,6 +6,7 @@ const getUploadsDirectory = require("../utils/getUploadsDirectory");
 const BadRequestError = require("../errors/bad-request-err");
 
 const allowedDirectories = new Set(["gallery", "posts"]);
+const MAX_UPLOAD_FILE_SIZE = 30 * 1024 * 1024;
 
 const createUpload = (directory) => {
   if (!allowedDirectories.has(directory)) {
@@ -28,7 +29,7 @@ const createUpload = (directory) => {
     storage,
 
     limits: {
-      fileSize: 10 * 1024 * 1024,
+      fileSize: MAX_UPLOAD_FILE_SIZE,
       files: 10,
     },
 

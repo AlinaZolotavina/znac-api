@@ -16,6 +16,11 @@ const uploadsDir = path.join(process.env.UPLOADS_DIR, "gallery");
 const thumbnailsDir = path.join(uploadsDir, "thumbnails");
 const postUploadsDir = path.join(process.env.UPLOADS_DIR, "posts");
 const postThumbnailsDir = path.join(postUploadsDir, "thumbnails");
+const oversizedFilePath = path.join(
+  process.env.UPLOADS_DIR,
+  "oversized-image.jpg"
+);
+const OVERSIZED_FILE_SIZE = 30 * 1024 * 1024 + 1;
 
 const getUploadedFiles = async (directory) =>
   (await fs.readdir(directory)).filter((file) => file !== ".gitkeep");
@@ -50,6 +55,13 @@ const cleanUploads = async () => {
   );
 };
 
+const removeOversizedFixture = () =>
+  fs.rm(oversizedFilePath, {
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  });
+
 beforeAll(mongo.connect);
 
 beforeEach(cleanUploads);
@@ -57,6 +69,7 @@ beforeEach(cleanUploads);
 afterEach(async () => {
   await User.deleteMany({});
   await cleanUploads();
+  await removeOversizedFixture();
 });
 
 afterAll(mongo.disconnect);
@@ -180,6 +193,20 @@ describe("Upload", () => {
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(NO_PHOTO_TO_UPLOAD_ERROR_MSG);
+    });
+
+    test("should reject files larger than 30MB", async () => {
+      await createUser();
+      const cookie = await login();
+      await fs.writeFile(oversizedFilePath, Buffer.alloc(OVERSIZED_FILE_SIZE));
+
+      const response = await request(app)
+        .post("/upload")
+        .set("Cookie", cookie)
+        .attach("photos", oversizedFilePath);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("File is too large");
     });
 
     test("should remove the whole batch when one file has invalid content", async () => {
