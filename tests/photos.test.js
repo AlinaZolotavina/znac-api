@@ -8,6 +8,7 @@ const app = require("../app");
 
 const User = require("../models/user");
 const Photo = require("../models/photo");
+const Hashtag = require("../models/hashtag");
 
 const createUser = require("./helpers/createUser");
 const login = require("./helpers/login");
@@ -23,7 +24,12 @@ const {
 beforeAll(mongo.connect);
 
 afterEach(async () => {
-  await Promise.all([User.deleteMany({}), Photo.deleteMany({})]);
+  jest.restoreAllMocks();
+  await Promise.all([
+    User.deleteMany({}),
+    Photo.deleteMany({}),
+    Hashtag.deleteMany({}),
+  ]);
 });
 
 afterAll(mongo.disconnect);
@@ -123,6 +129,97 @@ describe("Photos", () => {
 
       expect(response.body.data).toHaveLength(1);
       expect(response.body.data[0].hashtags).toContain("node");
+    });
+
+    test("should update hashtag statistics once after successful search", async () => {
+      const user = await createUser();
+
+      const cookie = await login();
+      const findOneAndUpdateSpy = jest
+        .spyOn(Hashtag, "findOneAndUpdate")
+        .mockResolvedValue(null);
+
+      await createPhoto(user._id, {
+        hashtags: ["node", "express"],
+      });
+
+      const response = await request(app)
+        .post("/photos/found")
+        .set("Cookie", cookie)
+        .send({
+          keyWord: "node",
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(1);
+
+      expect(findOneAndUpdateSpy).toHaveBeenCalledTimes(1);
+      expect(findOneAndUpdateSpy).toHaveBeenCalledWith(
+        { name: "node" },
+        {
+          $set: {
+            createdAt: expect.any(Date),
+          },
+          $setOnInsert: {
+            name: "node",
+          },
+        },
+        {
+          upsert: true,
+        }
+      );
+    });
+
+    test("should not update hashtag statistics when search has no results", async () => {
+      const user = await createUser();
+
+      const cookie = await login();
+      const findOneAndUpdateSpy = jest.spyOn(Hashtag, "findOneAndUpdate");
+
+      await createPhoto(user._id, {
+        hashtags: ["react"],
+      });
+
+      const response = await request(app)
+        .post("/photos/found")
+        .set("Cookie", cookie)
+        .send({
+          keyWord: "node",
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(0);
+      expect(findOneAndUpdateSpy).not.toHaveBeenCalled();
+    });
+
+    test("should keep search successful when hashtag statistics update fails", async () => {
+      const user = await createUser();
+      const error = new Error("Hashtag update failed");
+
+      const cookie = await login();
+      jest.spyOn(Hashtag, "findOneAndUpdate").mockRejectedValue(error);
+      const consoleErrorSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      await createPhoto(user._id, {
+        hashtags: ["node", "express"],
+      });
+
+      const response = await request(app)
+        .post("/photos/found")
+        .set("Cookie", cookie)
+        .send({
+          keyWord: "node",
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].hashtags).toContain("node");
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to update hashtag statistics:",
+        error
+      );
     });
 
     test("should support legacy string hashtags", async () => {

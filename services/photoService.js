@@ -1,4 +1,5 @@
 const Photo = require("../models/photo");
+const Hashtag = require("../models/hashtag");
 const NotFoundError = require("../errors/not-found-err");
 const escapeRegex = require("../utils/escapeRegex");
 const normalizeHashtags = require("../utils/normalizeHashtags");
@@ -24,6 +25,33 @@ const getPhotos = async ({ skip, limit }) => {
   };
 };
 
+const touchHashtag = async (keyWord) => {
+  const name = keyWord.trim().toLowerCase();
+
+  if (!name) {
+    return;
+  }
+
+  try {
+    await Hashtag.findOneAndUpdate(
+      { name },
+      {
+        $set: {
+          createdAt: new Date(),
+        },
+        $setOnInsert: {
+          name,
+        },
+      },
+      {
+        upsert: true,
+      }
+    );
+  } catch (err) {
+    console.error("Failed to update hashtag statistics:", err);
+  }
+};
+
 const findPhoto = async ({ skip, limit, keyWord = "" }) => {
   const tag = keyWord.trim();
 
@@ -40,6 +68,10 @@ const findPhoto = async ({ skip, limit, keyWord = "" }) => {
     Photo.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
     Photo.countDocuments(filter),
   ]);
+
+  if (tag && total > 0) {
+    await touchHashtag(tag);
+  }
 
   await ensureThumbnail(photos, "gallery");
 

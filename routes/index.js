@@ -2,11 +2,7 @@ const router = require("express").Router();
 const mongoose = require("mongoose");
 const { getPhotos, findPhoto } = require("../controllers/photos");
 const { uploadPhoto } = require("../controllers/upload");
-const {
-  getHashtags,
-  addHashtag,
-  updateHashtag,
-} = require("../controllers/hashtags");
+const { getHashtags } = require("../controllers/hashtags");
 const { increaseViews } = require("../controllers/photos");
 const { getPosts, getPost } = require("../controllers/posts");
 const { getProjects, getProjectHashtags } = require("../controllers/projects");
@@ -16,7 +12,6 @@ const {
   uploadRateLimiter,
   viewRateLimiter,
   contactRateLimiter,
-  hashtagRateLimiter,
 } = require("../middlewares/rateLimiter");
 const { sendContactMessage } = require("../controllers/contact");
 const setUploadType = require("../middlewares/setUploadType");
@@ -30,8 +25,6 @@ const {
   validatePostRequest,
   validateSearch,
   validateContactMessage,
-  validateAddHashtag,
-  validateUpdateHashtag,
 } = require("../middlewares/validateRequests");
 const auth = require("../middlewares/auth");
 const authRouter = require("./auth");
@@ -67,13 +60,6 @@ router.put(
 );
 
 router.get("/hashtags", publicReadRateLimiter, getHashtags);
-router.post("/hashtags", hashtagRateLimiter, validateAddHashtag, addHashtag);
-router.patch(
-  "/hashtags",
-  hashtagRateLimiter,
-  validateUpdateHashtag,
-  updateHashtag
-);
 
 router.get("/posts", publicReadRateLimiter, getPosts);
 router.get(

@@ -2,11 +2,7 @@ const { celebrate, Joi } = require("celebrate");
 const isUrl = require("validator/lib/isURL");
 const {
   BAD_URL_ERROR_MSG,
-  HASHTAG_MAX_LENGTH,
-  HASHTAG_MIN_LENGTH,
-  INVALID_HASHTAG_ERROR_MSG,
 } = require("../utils/constants");
-const { validateHashtag } = require("../utils/validateHashtag");
 
 const validateUrl = (url, helpers) => {
   const options =
@@ -25,14 +21,6 @@ const validateUrl = (url, helpers) => {
     throw helpers.message(BAD_URL_ERROR_MSG);
   }
   return url;
-};
-
-const validateHashtagName = (value, helpers) => {
-  if (!validateHashtag(value)) {
-    throw helpers.message(INVALID_HASHTAG_ERROR_MSG);
-  }
-
-  return value;
 };
 
 const validateSignup = celebrate({
@@ -103,32 +91,6 @@ const validatePhotoHashtags = celebrate({
   body: Joi.object().keys({
     newHashtags: Joi.string().min(2).max(500).required(),
   }),
-});
-
-const validateAddHashtag = celebrate({
-  body: Joi.object()
-    .keys({
-      newHashtag: Joi.string()
-        .trim()
-        .min(HASHTAG_MIN_LENGTH)
-        .max(HASHTAG_MAX_LENGTH)
-        .required()
-        .custom(validateHashtagName),
-    })
-    .unknown(false),
-});
-
-const validateUpdateHashtag = celebrate({
-  body: Joi.object()
-    .keys({
-      hashtagName: Joi.string()
-        .trim()
-        .min(HASHTAG_MIN_LENGTH)
-        .max(HASHTAG_MAX_LENGTH)
-        .required()
-        .custom(validateHashtagName),
-    })
-    .unknown(false),
 });
 
 const validatePostRequest = celebrate({
@@ -217,8 +179,6 @@ module.exports = {
   validatePhotoRequest,
   validateAddPhoto,
   validatePhotoHashtags,
-  validateAddHashtag,
-  validateUpdateHashtag,
   validatePostRequest,
   validateAddPost,
   validateUpdatePost,
