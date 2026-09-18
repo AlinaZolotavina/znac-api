@@ -92,5 +92,4 @@ describe("Hashtags", () => {
       expect(response.body.data[0].name).toBe("first");
     });
   });
-
 });
