@@ -5,8 +5,6 @@ const safeMethods = ["GET", "HEAD", "OPTIONS"];
 const publicUnsafeRoutes = [
   { method: "POST", path: /^\/photos\/found$/ },
   { method: "PUT", path: /^\/photos\/[^/]+\/views$/ },
-  { method: "POST", path: /^\/hashtags$/ },
-  { method: "PATCH", path: /^\/hashtags$/ },
   { method: "POST", path: /^\/contact$/ },
 ];
 

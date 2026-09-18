@@ -64,8 +64,6 @@ describe("checkOrigin", () => {
   test.each([
     ["POST", "/photos/found"],
     ["PUT", "/photos/507f1f77bcf86cd799439011/views"],
-    ["POST", "/hashtags"],
-    ["PATCH", "/hashtags"],
     ["POST", "/contact"],
   ])(
     "should allow public %s %s requests without Origin header",
