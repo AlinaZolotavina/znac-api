@@ -9,7 +9,8 @@ const { getProjects, getProjectHashtags } = require("../controllers/projects");
 const {
   publicReadRateLimiter,
   writeRateLimiter,
-  uploadRateLimiter,
+  galleryUploadRateLimiter,
+  postImageUploadRateLimiter,
   viewRateLimiter,
   contactRateLimiter,
 } = require("../middlewares/rateLimiter");
@@ -85,7 +86,7 @@ router.use(auth);
 
 router.post(
   "/posts/image",
-  uploadRateLimiter,
+  postImageUploadRateLimiter,
   setUploadType("posts"),
   postUpload.array("images", 10),
   validateUploadedFiles,
@@ -95,7 +96,7 @@ router.post(
 
 router.post(
   "/upload",
-  uploadRateLimiter,
+  galleryUploadRateLimiter,
   setUploadType("gallery"),
   galleryUpload.array("photos", 10),
   validateUploadedFiles,

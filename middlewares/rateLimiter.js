@@ -11,6 +11,8 @@ const createRateLimiter = (max, message) =>
     },
   });
 
+const getUserRateLimitKey = (req) => req.user?._id || req.ip;
+
 const publicReadRateLimiter = createRateLimiter(
   600,
   "Too many requests. Please try again later."
@@ -48,10 +50,27 @@ const writeRateLimiter = rateLimit({
   },
 });
 
-const uploadRateLimiter = createRateLimiter(
-  30,
-  "Too many uploads. Please try again later."
-);
+const galleryUploadRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getUserRateLimitKey,
+  message: {
+    message: "Too many uploads. Please try again later.",
+  },
+});
+
+const postImageUploadRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getUserRateLimitKey,
+  message: {
+    message: "Too many uploads. Please try again later.",
+  },
+});
 
 const viewRateLimiter = createRateLimiter(
   300,
@@ -73,7 +92,8 @@ module.exports = {
   protectedReadRateLimiter,
   authRateLimiter,
   writeRateLimiter,
-  uploadRateLimiter,
+  galleryUploadRateLimiter,
+  postImageUploadRateLimiter,
   viewRateLimiter,
   contactRateLimiter,
   hashtagRateLimiter,
