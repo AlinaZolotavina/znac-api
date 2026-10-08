@@ -3,6 +3,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 
 const app = require("./app");
+const ensureUploadsDirectories = require("./utils/ensureUploadsDirectories");
 
 const { PORT, DB_URL } = process.env;
 
@@ -18,6 +19,8 @@ let server;
 
 const start = async () => {
   try {
+    ensureUploadsDirectories();
+
     await mongoose.connect(DB_URL);
 
     console.log("MongoDB connected");

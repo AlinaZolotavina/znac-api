@@ -7,18 +7,27 @@ const { increaseViews } = require("../controllers/photos");
 const { getPosts, getPost } = require("../controllers/posts");
 const { getProjects, getProjectHashtags } = require("../controllers/projects");
 const {
+  getSettings,
+  updateHeroImage,
+  updateSignupSettings,
+  updateAccentColor,
+} = require("../controllers/siteSettings");
+const {
   publicReadRateLimiter,
   writeRateLimiter,
   galleryUploadRateLimiter,
   postImageUploadRateLimiter,
+  heroUploadRateLimiter,
   viewRateLimiter,
   contactRateLimiter,
 } = require("../middlewares/rateLimiter");
 const { sendContactMessage } = require("../controllers/contact");
 const setUploadType = require("../middlewares/setUploadType");
+const adminOnly = require("../middlewares/adminOnly");
 const createUpload = require("../middlewares/upload");
 const galleryUpload = createUpload("gallery");
 const postUpload = createUpload("posts");
+const heroUpload = createUpload("heroes");
 const validateUploadedFiles = require("../middlewares/validateUploadedFiles");
 const createThumbnails = require("../middlewares/createThumbnails");
 const {
@@ -26,6 +35,9 @@ const {
   validatePostRequest,
   validateSearch,
   validateContactMessage,
+  validateHeroSlot,
+  validateSignupSettings,
+  validateAccentColorSettings,
 } = require("../middlewares/validateRequests");
 const auth = require("../middlewares/auth");
 const authRouter = require("./auth");
@@ -72,6 +84,7 @@ router.get(
 
 router.get("/projects", publicReadRateLimiter, getProjects);
 router.get("/projecthashtags", publicReadRateLimiter, getProjectHashtags);
+router.get("/settings", publicReadRateLimiter, getSettings);
 
 router.post(
   "/contact",
@@ -83,6 +96,31 @@ router.post(
 router.use(authRouter);
 
 router.use(auth);
+
+router.patch(
+  "/settings/heroes/:slot",
+  adminOnly,
+  heroUploadRateLimiter,
+  validateHeroSlot,
+  setUploadType("heroes"),
+  heroUpload.single("image"),
+  validateUploadedFiles,
+  updateHeroImage
+);
+
+router.patch(
+  "/settings/auth/signup",
+  adminOnly,
+  validateSignupSettings,
+  updateSignupSettings
+);
+
+router.patch(
+  "/settings/colors/accent",
+  adminOnly,
+  validateAccentColorSettings,
+  updateAccentColor
+);
 
 router.post(
   "/posts/image",

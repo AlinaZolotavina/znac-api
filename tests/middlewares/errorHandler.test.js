@@ -27,7 +27,7 @@ describe("errorHandler", () => {
 
     errorHandler(err, req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(413);
 
     expect(res.send).toHaveBeenCalledWith({
       message: "File is too large",

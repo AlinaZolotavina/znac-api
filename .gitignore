@@ -21,12 +21,17 @@ uploads/*
 !uploads/posts/.gitkeep
 !uploads/posts/thumbnails/
 !uploads/posts/thumbnails/.gitkeep
+!uploads/heroes/
+!uploads/heroes/.gitkeep
 
 uploads/gallery/*
 !uploads/gallery/.gitkeep
 
 uploads/posts/*
 !uploads/posts/.gitkeep
+
+uploads/heroes/*
+!uploads/heroes/.gitkeep
 
 # Optional npm cache directory
 .npm

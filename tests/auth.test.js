@@ -8,6 +8,7 @@ const app = require("../app");
 const transporter = require("../utils/nodemailerTransporter");
 
 const User = require("../models/user");
+const SiteSettings = require("../models/siteSettings");
 const createUser = require("./helpers/createUser");
 const expectAuthCookie = require("./helpers/expectAuthCookie");
 const login = require("./helpers/login");
@@ -30,22 +31,45 @@ beforeAll(mongo.connect);
 afterEach(async () => {
   jest.clearAllMocks();
   await User.deleteMany({});
+  await SiteSettings.deleteMany({});
 });
 
 afterAll(mongo.disconnect);
 
 describe("Authentication", () => {
   describe("POST /signup", () => {
-    test("should reject public registration", async () => {
+    test("should reject public registration by default", async () => {
       const response = await request(app).post("/signup").send({
-        name: "Alina",
         email: "alina@test.com",
         password: "12345678",
       });
 
       expect(response.status).toBe(403);
       expect(await User.countDocuments()).toBe(0);
-      expect(response.body.message).toBe("User registration is disabled");
+      expect(response.body.message).toBe("Signup is currently disabled");
+    });
+
+    test("should register user when signup is enabled", async () => {
+      await SiteSettings.create({
+        _id: "site-settings",
+        heroes: {
+          main: null,
+          gallery: null,
+        },
+        auth: {
+          signupEnabled: true,
+        },
+      });
+
+      const response = await request(app).post("/signup").send({
+        email: "alina@test.com",
+        password: "12345678",
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body.user.email).toBe("alina@test.com");
+      expect(response.body.user).not.toHaveProperty("password");
+      expect(await User.countDocuments()).toBe(1);
     });
   });
 
@@ -66,6 +90,7 @@ describe("Authentication", () => {
 
       expect(response.body.user.email).toBe("test@test.com");
       expect(typeof response.body.user._id).toBe("string");
+      expect(response.body.user.role).toBe("user");
       expect(response.body.user).not.toHaveProperty("password");
       expect(response.body.message).toBe(SUCCESSFUL_LOGIN_MSG);
       expect(response.body).not.toHaveProperty("token");

@@ -5,8 +5,10 @@ const getUploadsDirectory = require("../utils/getUploadsDirectory");
 
 const BadRequestError = require("../errors/bad-request-err");
 
-const allowedDirectories = new Set(["gallery", "posts"]);
+const allowedDirectories = new Set(["gallery", "posts", "heroes"]);
 const MAX_UPLOAD_FILE_SIZE = 30 * 1024 * 1024;
+const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const allowedExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
 const createUpload = (directory) => {
   if (!allowedDirectories.has(directory)) {
@@ -34,11 +36,12 @@ const createUpload = (directory) => {
     },
 
     fileFilter(req, file, cb) {
-      const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-
       const extension = path.extname(file.originalname).toLowerCase();
 
-      if (!allowedExtensions.includes(extension)) {
+      if (
+        !allowedExtensions.has(extension) ||
+        !allowedMimeTypes.has(file.mimetype)
+      ) {
         return cb(
           new BadRequestError(`Unsupported file type: ${file.originalname}`)
         );

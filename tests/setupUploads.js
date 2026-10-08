@@ -8,6 +8,7 @@ process.env.UPLOADS_DIR = uploadsDirectory;
 [
   path.join(uploadsDirectory, "gallery", "thumbnails"),
   path.join(uploadsDirectory, "posts", "thumbnails"),
+  path.join(uploadsDirectory, "heroes"),
 ].forEach((directory) => {
   fs.mkdirSync(directory, { recursive: true });
 });

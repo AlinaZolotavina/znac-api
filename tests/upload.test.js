@@ -16,6 +16,7 @@ const uploadsDir = path.join(process.env.UPLOADS_DIR, "gallery");
 const thumbnailsDir = path.join(uploadsDir, "thumbnails");
 const postUploadsDir = path.join(process.env.UPLOADS_DIR, "posts");
 const postThumbnailsDir = path.join(postUploadsDir, "thumbnails");
+const heroUploadsDir = path.join(process.env.UPLOADS_DIR, "heroes");
 const oversizedFilePath = path.join(
   process.env.UPLOADS_DIR,
   "oversized-image.jpg"
@@ -38,6 +39,7 @@ const cleanUploads = async () => {
     { directory: thumbnailsDir },
     { directory: postUploadsDir, exclude: "thumbnails" },
     { directory: postThumbnailsDir },
+    { directory: heroUploadsDir },
   ];
   const files = await Promise.all(
     directories.map(async ({ directory, exclude }) => ({
@@ -205,7 +207,7 @@ describe("Upload", () => {
         .set("Cookie", cookie)
         .attach("photos", oversizedFilePath);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(413);
       expect(response.body.message).toBe("File is too large");
     });
 

@@ -7,11 +7,13 @@ const jwt = require("jsonwebtoken");
 const transporter = require("../utils/nodemailerTransporter");
 
 const User = require("../models/user");
+const siteSettingsService = require("./siteSettingsService");
 
 const NotFoundError = require("../errors/not-found-err");
 const ConflictError = require("../errors/conflict-err");
 const BadRequestError = require("../errors/bad-request-err");
 const UnauthorizedError = require("../errors/unauthorized-err");
+const ForbiddenError = require("../errors/forbidden-err");
 
 const {
   CONFLICT_SIGNUP_EMAIL_ERROR_MSG,
@@ -43,6 +45,12 @@ const {
 } = require("../utils/emailHtmlMarkup");
 
 const createUser = async ({ name, email, password }) => {
+  const settings = await siteSettingsService.getOrCreateSiteSettings();
+
+  if (!settings.auth.signupEnabled) {
+    throw new ForbiddenError("Signup is currently disabled");
+  }
+
   const hash = await bcrypt.hash(password, 10);
 
   try {
@@ -68,6 +76,7 @@ const login = async ({ email, password }) => {
   const token = jwt.sign(
     {
       _id: user._id,
+      role: user.role,
     },
     JWT_SECRET,
     {

@@ -11,7 +11,7 @@ const createRateLimiter = (max, message) =>
     },
   });
 
-const getUserRateLimitKey = (req) => req.user?._id || req.ip;
+const getUserRateLimitKey = (req) => req.user?._id?.toString() || req.ip;
 
 const publicReadRateLimiter = createRateLimiter(
   600,
@@ -72,6 +72,17 @@ const postImageUploadRateLimiter = rateLimit({
   },
 });
 
+const heroUploadRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getUserRateLimitKey,
+  message: {
+    message: "Too many hero uploads. Please try again later.",
+  },
+});
+
 const viewRateLimiter = createRateLimiter(
   300,
   "Too many view updates. Please try again later."
@@ -94,6 +105,7 @@ module.exports = {
   writeRateLimiter,
   galleryUploadRateLimiter,
   postImageUploadRateLimiter,
+  heroUploadRateLimiter,
   viewRateLimiter,
   contactRateLimiter,
   hashtagRateLimiter,

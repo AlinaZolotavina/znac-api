@@ -37,6 +37,7 @@ const login = (req, res, next) => {
           user: {
             _id: user._id,
             email: user.email,
+            role: user.role,
           },
           message: SUCCESSFUL_LOGIN_MSG,
         })

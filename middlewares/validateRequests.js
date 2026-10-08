@@ -166,6 +166,26 @@ const validateContactMessage = celebrate({
   }),
 });
 
+const validateHeroSlot = celebrate({
+  params: Joi.object().keys({
+    slot: Joi.string().valid("main", "gallery").required(),
+  }),
+});
+
+const validateSignupSettings = celebrate({
+  body: Joi.object().keys({
+    enabled: Joi.boolean().required(),
+  }),
+});
+
+const validateAccentColorSettings = celebrate({
+  body: Joi.object().keys({
+    color: Joi.string()
+      .pattern(/^#[0-9a-fA-F]{6}$/)
+      .required(),
+  }),
+});
+
 module.exports = {
   validateSignup,
   validateSignin,
@@ -185,4 +205,7 @@ module.exports = {
   validateUpdateProject,
   validateSearch,
   validateContactMessage,
+  validateHeroSlot,
+  validateSignupSettings,
+  validateAccentColorSettings,
 };

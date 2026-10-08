@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  role: {
+    type: String,
+    enum: ["admin", "user"],
+    default: "user",
+  },
 });
 
 userSchema.statics.findUserByCredentials = function findUser(email, password) {

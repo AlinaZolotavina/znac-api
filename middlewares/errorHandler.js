@@ -5,7 +5,7 @@ const errorHandler = (err, req, res, _next) => {
   if (err instanceof multer.MulterError) {
     switch (err.code) {
       case "LIMIT_FILE_SIZE":
-        return res.status(400).send({
+        return res.status(413).send({
           message: "File is too large",
         });
 

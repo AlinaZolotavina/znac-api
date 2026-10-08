@@ -62,6 +62,24 @@ describe("validateUploadedFiles", () => {
     expect(next).toHaveBeenCalledWith();
   });
 
+  test("should accept a single valid jpeg from multer single upload", async () => {
+    req.files = undefined;
+    req.file = {
+      path: "/tmp/photo.jpg",
+      originalname: "photo.jpg",
+    };
+
+    FileType.fromFile.mockResolvedValue({
+      mime: "image/jpeg",
+    });
+
+    await validateUploadedFiles(req, res, next);
+
+    expect(FileType.fromFile).toHaveBeenCalledWith("/tmp/photo.jpg");
+    expect(fs.unlink).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith();
+  });
+
   test("should accept valid png", async () => {
     req.files = [
       {
