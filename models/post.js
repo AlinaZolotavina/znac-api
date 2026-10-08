@@ -20,7 +20,7 @@ const postSchema = new mongoose.Schema({
     type: String,
     required: true,
     minLength: 2,
-    maxlength: 50,
+    maxlength: 70,
   },
   photoFilename: {
     type: String,
@@ -44,8 +44,8 @@ const postSchema = new mongoose.Schema({
   text: {
     type: String,
     required: true,
-    minLength: 2,
-    maxlength: 5000,
+    minLength: 1,
+    maxlength: 6000,
   },
   createdAt: {
     type: Date,

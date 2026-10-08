@@ -188,6 +188,49 @@ describe("Posts", () => {
       expect(saved.hashtags).toEqual(["node"]);
     });
 
+    test("should allow post title up to 70 characters and text up to 6000 characters", async () => {
+      await createUser();
+
+      const cookie = await login();
+      const title = "a".repeat(70);
+      const text = "b".repeat(6000);
+
+      const response = await request(app)
+        .post("/posts")
+        .set("Cookie", cookie)
+        .send({
+          theme: "Backend",
+          icon: "рџ’»",
+          title,
+          hashtags: "node",
+          text,
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.title).toBe(title);
+      expect(response.body.text).toBe(text);
+    });
+
+    test("should reject post title and text over limits", async () => {
+      await createUser();
+
+      const cookie = await login();
+
+      const response = await request(app)
+        .post("/posts")
+        .set("Cookie", cookie)
+        .send({
+          theme: "Backend",
+          icon: "рџ’»",
+          title: "a".repeat(71),
+          hashtags: "node",
+          text: "b".repeat(6001),
+        });
+
+      expect(response.status).toBe(400);
+      expect(await Post.countDocuments()).toBe(0);
+    });
+
     test("should reject invalid data", async () => {
       await createUser();
 
