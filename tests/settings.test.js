@@ -211,11 +211,9 @@ describe("Settings", () => {
 
   describe("PATCH /settings/auth/signup", () => {
     test("should reject signup setting update without auth", async () => {
-      const response = await request(app)
-        .patch("/settings/auth/signup")
-        .send({
-          enabled: false,
-        });
+      const response = await request(app).patch("/settings/auth/signup").send({
+        enabled: false,
+      });
 
       expect(response.status).toBe(401);
     });
