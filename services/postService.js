@@ -63,6 +63,8 @@ const addPost = ({
   title,
   photoLink,
   photoFilename,
+  externalLink,
+  externalLinkButtonText,
   hashtags,
   text,
 }) =>
@@ -73,6 +75,10 @@ const addPost = ({
     title,
     photoLink,
     photoFilename,
+    externalLink: externalLink || undefined,
+    externalLinkButtonText: externalLink
+      ? externalLinkButtonText || undefined
+      : undefined,
     hashtags: normalizeHashtags(hashtags),
     text,
   });
@@ -85,6 +91,8 @@ const updatePost = async ({
   newTitle,
   newPhotoLink,
   newPhotoFilename,
+  newExternalLink,
+  newExternalLinkButtonText,
   removePhoto,
   newHashtags,
   newText,
@@ -110,6 +118,16 @@ const updatePost = async ({
   post.title = newTitle;
   post.hashtags = normalizeHashtags(newHashtags);
   post.text = newText;
+
+  if (newExternalLink !== undefined) {
+    post.externalLink = newExternalLink || undefined;
+  }
+  if (newExternalLinkButtonText !== undefined) {
+    post.externalLinkButtonText = newExternalLinkButtonText || undefined;
+  }
+  if (!post.externalLink) {
+    post.externalLinkButtonText = undefined;
+  }
 
   if (removePhoto) {
     post.photoLink = undefined;

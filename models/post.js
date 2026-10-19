@@ -34,6 +34,24 @@ const postSchema = new mongoose.Schema({
       message: IMAGE_BAD_URL_ERROR_MSG,
     },
   },
+  externalLink: {
+    type: String,
+    required: false,
+    set: (value) => (value === "" || value === null ? undefined : value),
+    validate: {
+      validator(v) {
+        return !v || isUrl(v, { require_tld: false });
+      },
+      message: IMAGE_BAD_URL_ERROR_MSG,
+    },
+  },
+  externalLinkButtonText: {
+    type: String,
+    required: false,
+    trim: true,
+    minLength: 1,
+    maxlength: 40,
+  },
   hashtags: [
     {
       type: String,
@@ -59,6 +77,13 @@ postSchema.index({ createdAt: -1 });
 postSchema.index({ hashtags: 1 });
 
 postSchema.pre("validate", function (next) {
+  if (!this.externalLink) {
+    this.externalLink = undefined;
+    this.externalLinkButtonText = undefined;
+  } else if (!this.externalLinkButtonText) {
+    this.externalLinkButtonText = undefined;
+  }
+
   if (this.photoLink && this.photoFilename) {
     this.invalidate(
       "photoFilename",
