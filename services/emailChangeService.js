@@ -2,7 +2,11 @@ const bcrypt = require("bcryptjs");
 const isEmail = require("validator/lib/isEmail");
 const User = require("../models/user");
 const transporter = require("../utils/nodemailerTransporter");
-const { emailConfirmationEmailMarkup } = require("../utils/emailHtmlMarkup");
+const {
+  emailConfirmationEmailMarkup,
+  successfulEmailUpdateEmailMarkup,
+  emailAttachments,
+} = require("../utils/emailHtmlMarkup");
 const {
   createToken,
   hashToken,
@@ -107,6 +111,7 @@ const requestEmailUpdate = async ({
         subject: "Confirm your email change",
         text: `Confirm the email change from both your current and new inboxes within 20 minutes.\nhttps://znac.org/profile/update-email/${token}\nIf you did not request this change, ignore this message.`,
         html: emailConfirmationEmailMarkup(token, address),
+        attachments: emailAttachments("update-email"),
       })
     )
   );
@@ -223,8 +228,26 @@ const updateEmail = async (args) => {
     throw error;
   }
   if (!updated) throw invalidLink();
+  const completed = updated.pendingEmail === undefined;
+  if (completed) {
+    const deliveries = await Promise.allSettled(
+      [user.email, updated.email].map((to) =>
+        transporter.sendMail({
+          from: process.env.NODEMAILER_USER,
+          to,
+          subject: "Your email address has been changed",
+          text: "Your ZNAC account email address has been successfully changed. Sign in using your new email address. If you did not make this change, contact znacompany@gmail.com immediately.",
+          html: successfulEmailUpdateEmailMarkup,
+          attachments: emailAttachments("update-email"),
+        })
+      )
+    );
+    if (deliveries.some((delivery) => delivery.status === "rejected")) {
+      console.error("Failed to send email change notification");
+    }
+  }
   return {
-    completed: updated.pendingEmail === undefined,
+    completed,
     confirmedAddress: address,
   };
 };

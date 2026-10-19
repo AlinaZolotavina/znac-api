@@ -197,6 +197,7 @@ test.each([
       .patch(`/profile/update-email/${tokens[first]}`)
       .set("Cookie", cookie);
     expect(firstResponse.body.completed).toBe(false);
+    expect(transporter.sendMail).toHaveBeenCalledTimes(2);
     expect(firstResponse.headers["set-cookie"]).toBeUndefined();
     expect((await inspect(user._id)).email).toBe(user.email);
     await expect(
@@ -207,6 +208,20 @@ test.each([
       .set("Cookie", cookie);
     expect(finalResponse.status).toBe(200);
     expect(finalResponse.body.completed).toBe(true);
+    expect(transporter.sendMail).toHaveBeenCalledTimes(4);
+    for (const to of [user.email, "new@test.com"]) {
+      expect(transporter.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to,
+          subject: "Your email address has been changed",
+          html: expect.stringContaining("Your email address has been changed"),
+        })
+      );
+    }
+    await expect(
+      service.updateEmail(args(user, tokens[second]))
+    ).rejects.toMatchObject(invalid);
+    expect(transporter.sendMail).toHaveBeenCalledTimes(4);
     expect(finalResponse.headers["set-cookie"][0]).toContain("jwt=;");
     const saved = await inspect(user._id);
     expect(saved.email).toBe("new@test.com");
@@ -260,6 +275,7 @@ test("simultaneous confirmations of different inboxes complete exactly once", as
   ]);
   expect((await inspect(user._id)).email).toBe("new@test.com");
   expect((await inspect(user._id)).tokenVersion).toBe(1);
+  expect(transporter.sendMail).toHaveBeenCalledTimes(4);
 });
 
 test("two concurrent uses of the same link consume it once", async () => {
@@ -277,6 +293,35 @@ test("two concurrent uses of the same link consume it once", async () => {
     results.find((result) => result.status === "rejected").reason.code
   ).toBe(invalid.code);
   expect((await inspect(user._id)).email).toBe(user.email);
+});
+
+test("notification delivery failure does not undo completion or prevent notifying the other inbox", async () => {
+  const user = await createUser();
+  const tokens = await startChange(user);
+  const cookie = await session(user);
+  await service.updateEmail(args(user, tokens.current));
+  const log = jest.spyOn(console, "error").mockImplementation(() => {});
+  transporter.sendMail.mockRejectedValueOnce(new Error("SMTP unavailable"));
+
+  const response = await request(app)
+    .patch(`/profile/update-email/${tokens.new}`)
+    .set("Cookie", cookie);
+
+  expect(response.status).toBe(200);
+  expect(response.body.completed).toBe(true);
+  expect(response.headers["set-cookie"][0]).toContain("jwt=;");
+  expect(transporter.sendMail).toHaveBeenCalledTimes(4);
+  expect(transporter.sendMail).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      to: "new@test.com",
+      subject: "Your email address has been changed",
+    })
+  );
+  const saved = await inspect(user._id);
+  expect(saved.email).toBe("new@test.com");
+  expect(saved.pendingEmail).toBeUndefined();
+  expect(saved.tokenVersion).toBe(1);
+  expect(log).toHaveBeenCalledWith("Failed to send email change notification");
 });
 
 test("a replacement request invalidates both earlier links", async () => {

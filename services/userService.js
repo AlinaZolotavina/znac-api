@@ -44,6 +44,7 @@ const {
 } = require("../utils/constants");
 
 const {
+  emailAttachments,
   resetPasswordEmailMarkup,
   successfullPasswordUpdateEmailMarkup,
 } = require("../utils/emailHtmlMarkup");
@@ -179,6 +180,7 @@ const forgotPassword = async (email) => {
       subject: FORGOT_PASSWORD_SUBJECT,
       text: FORGOT_PASSWORD_TEXT,
       html: resetPasswordEmailMarkup(token),
+      attachments: emailAttachments("forgot-password"),
     });
   }
 };
@@ -262,6 +264,7 @@ const resetPassword = async ({ token, newPassword, confirmPassword }) => {
       subject: RESET_PASSWORD_SUBJECT,
       text: RESET_PASSWORD_TEXT,
       html: successfullPasswordUpdateEmailMarkup,
+      attachments: emailAttachments("password-changed"),
     });
   } catch {
     console.error("Failed to send password reset confirmation email");
