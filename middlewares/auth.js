@@ -26,7 +26,11 @@ const auth = async (req, res, next) => {
     if (!user || (payload.tokenVersion ?? 0) !== user.tokenVersion) {
       return next(new UnauthorizedError(UNAUTHORIZED_ERROR_MSG));
     }
-    req.user = { _id: user._id.toString(), role: user.role };
+    req.user = {
+      _id: user._id.toString(),
+      role: user.role,
+      tokenVersion: user.tokenVersion,
+    };
     return next();
   } catch (err) {
     return next(err);

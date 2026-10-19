@@ -11,10 +11,8 @@ const User = require("../models/user");
 const createUser = require("./helpers/createUser");
 const createResetToken = require("./helpers/createResetToken");
 const service = require("../services/userService");
-const {
-  cleanupExpiredResetTokens,
-} = require("../services/passwordResetCleanup");
-const { hashResetToken } = require("../utils/passwordResetToken");
+const { cleanupExpiredTokens } = require("../services/expiredTokenCleanup");
+const { hashToken } = require("../utils/securityTokens");
 const transporter = require("../utils/nodemailerTransporter");
 
 const reset = (token, password = "next-password-123") =>
@@ -143,7 +141,7 @@ test("a link replaced during password hashing cannot reset the password", async 
     code: "RESET_LINK_INVALID",
   });
   expect((await privateUser(user._id)).resetPasswordTokenHash).toBe(
-    hashResetToken(replacement)
+    hashToken(replacement)
   );
 });
 
@@ -219,7 +217,9 @@ test("reset revokes existing and legacy sessions; fresh login works", async () =
 });
 
 test("API responses and explicitly selected documents omit private fields", async () => {
-  const user = await createUser({ updateEmailLink: "private-email-token" });
+  const user = await createUser({
+    emailChangeOldTokenHash: "private-email-token",
+  });
   await User.collection.updateOne(
     { _id: user._id },
     { $set: { internalNote: "private field outside the current schema" } }
@@ -241,7 +241,7 @@ test("API responses and explicitly selected documents omit private fields", asyn
       "resetPasswordTokenHash",
       "resetPasswordExpiresAt",
       "tokenVersion",
-      "updateEmailLink",
+      "emailChangeOldTokenHash",
       "__v",
     ]) {
       expect(data).not.toHaveProperty(field);
@@ -258,7 +258,7 @@ test("cleanup removes expired and incomplete reset records, preserving users and
     email: "incomplete@test.com",
     resetPasswordTokenHash: "a".repeat(64),
   });
-  await cleanupExpiredResetTokens();
+  await cleanupExpiredTokens();
   expect(await User.countDocuments()).toBe(3);
   expect(
     (await privateUser(expired._id)).resetPasswordTokenHash
@@ -267,7 +267,7 @@ test("cleanup removes expired and incomplete reset records, preserving users and
     (await privateUser(incomplete._id)).resetPasswordTokenHash
   ).toBeUndefined();
   expect((await privateUser(fresh._id)).resetPasswordTokenHash).toBe(
-    hashResetToken(freshToken)
+    hashToken(freshToken)
   );
 });
 

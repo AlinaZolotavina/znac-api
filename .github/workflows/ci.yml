@@ -17,7 +17,6 @@ jobs:
       DB_URL: mongodb://localhost:27017/znac-test
       JWT_RESET_PASSWORD: test-reset-secret
       JWT_SECRET: test-jwt-secret
-      JWT_UPDATE_EMAIL: test-update-email-secret
       NODEMAILER_HOST: smtp.example.com
       NODEMAILER_PASSWORD: test-password
       NODEMAILER_SERVICE: test

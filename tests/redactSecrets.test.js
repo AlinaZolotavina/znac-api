@@ -15,6 +15,9 @@ test("redacts URL tokens, cookies, authorization and nested passwords", () => {
           referer: `https://znac.org/reset-password/${token}`,
         },
         body: {
+          currentPassword: "current-secret",
+          emailChangeOldTokenHash: token,
+          emailChangeNewTokenHash: token,
           newPassword: "new-secret",
           confirmPassword: "new-secret",
           token,
@@ -28,6 +31,7 @@ test("redacts URL tokens, cookies, authorization and nested passwords", () => {
   expect(serialized).not.toContain(token);
   expect(serialized).not.toContain(jwt);
   expect(serialized).not.toContain("new-secret");
+  expect(serialized).not.toContain("current-secret");
   expect(result.message).toBe("HTTP PUT /reset-password/[REDACTED]");
   expect(record.meta.req.body.newPassword).toBe("new-secret");
   expect(redactText("GET /photos/123")).toBe("GET /photos/123");

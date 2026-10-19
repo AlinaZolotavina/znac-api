@@ -1,5 +1,5 @@
 const SECRET_KEY =
-  /^(?:cookie|set-cookie|authorization|password|oldPassword|newPassword|confirmPassword|token|resetPasswordTokenHash|updateEmailLink)$/i;
+  /^(?:cookie|set-cookie|authorization|password|currentPassword|oldPassword|newPassword|confirmPassword|token|.*TokenHash|emailChangeRequestId)$/i;
 
 const redactText = (text) =>
   text

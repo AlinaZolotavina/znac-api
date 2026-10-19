@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    trim: true,
+    lowercase: true,
     validate: {
       validator: (v) => isEmail(v),
       message: BAD_EMAIL_ERROR_MSG,
@@ -38,11 +40,15 @@ const userSchema = new mongoose.Schema({
     default: 0,
     select: false,
   },
-  updateEmailLink: {
-    type: String,
-    default: "",
-    select: false,
-  },
+  pendingEmail: { type: String, select: false },
+  emailChangeCurrentEmail: { type: String, select: false },
+  emailChangeRequestId: { type: String, select: false },
+  emailChangeTokenVersion: { type: Number, select: false },
+  emailChangeExpiresAt: { type: Date, select: false, index: true },
+  emailChangeOldTokenHash: { type: String, select: false },
+  emailChangeNewTokenHash: { type: String, select: false },
+  emailChangeOldConfirmed: { type: Boolean, select: false },
+  emailChangeNewConfirmed: { type: Boolean, select: false },
   role: {
     type: String,
     enum: ["admin", "user"],
@@ -61,6 +67,7 @@ userSchema.set("toJSON", {
 
 userSchema.statics.findUserByCredentials = function findUser(email, password) {
   return this.findOne({ email })
+    .collation({ locale: "en", strength: 2 })
     .select("+password +tokenVersion")
     .then((user) => {
       if (!user) {

@@ -3,7 +3,6 @@ const userService = require("../services/userService");
 const {
   SUCCESSFUL_LOGIN_MSG,
   SUCCESSFUL_LOGOUT_MSG,
-  SUCCESSFUL_EMAIL_UPDATE_MSG,
   SUCCESSFUL_PASSWORD_UPDATE_MSG,
   EMAIL_SENT_SUCCESSFULLY_MSG,
 } = require("../utils/constants");
@@ -89,6 +88,8 @@ const requestEmailUpdate = (req, res, next) => {
     .requestEmailUpdate({
       userId: req.user._id,
       newEmail: req.body.newEmail,
+      currentPassword: req.body.currentPassword,
+      tokenVersion: req.user.tokenVersion,
     })
     .then(() =>
       res.status(200).send({
@@ -99,14 +100,34 @@ const requestEmailUpdate = (req, res, next) => {
 };
 
 const updateEmail = (req, res, next) => {
+  res.set("Cache-Control", "no-store");
   userService
-    .updateEmail(req.params.updateEmailLink)
-    .then((user) =>
-      res.status(200).send({
-        message: SUCCESSFUL_EMAIL_UPDATE_MSG,
-        user,
-      })
-    )
+    .updateEmail({
+      userId: req.user._id,
+      token: req.params.token,
+      tokenVersion: req.user.tokenVersion,
+    })
+    .then((result) => {
+      if (result.completed)
+        res.clearCookie("jwt", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+      res.send(result);
+    })
+    .catch(next);
+};
+
+const validateEmailChangeLink = (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  userService
+    .validateEmailChangeLink({
+      userId: req.user._id,
+      token: req.params.token,
+      tokenVersion: req.user.tokenVersion,
+    })
+    .then((result) => res.send(result))
     .catch(next);
 };
 
@@ -163,4 +184,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   validateResetPasswordLink,
+  validateEmailChangeLink,
 };

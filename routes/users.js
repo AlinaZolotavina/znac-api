@@ -9,19 +9,30 @@ const {
   requestEmailUpdate,
   updateEmail,
   updatePassword,
+  validateEmailChangeLink,
 } = require("../controllers/users");
-const { protectedReadRateLimiter } = require("../middlewares/rateLimiter");
+const {
+  protectedReadRateLimiter,
+  emailChangeRateLimiter,
+} = require("../middlewares/rateLimiter");
 
 router.get("/profile", protectedReadRateLimiter, getUserProfile);
 router.put(
   "/profile/update-email",
+  emailChangeRateLimiter,
   validateRequestEmailUpdate,
   requestEmailUpdate
 );
 router.patch(
-  "/profile/update-email/:updateEmailLink",
+  "/profile/update-email/:token",
   validateUpdateUserEmail,
   updateEmail
+);
+router.get(
+  "/profile/update-email/:token",
+  protectedReadRateLimiter,
+  validateUpdateUserEmail,
+  validateEmailChangeLink
 );
 router.patch(
   "/profile/update-password",

@@ -1,4 +1,4 @@
-const { JWT_SECRET, JWT_UPDATE_EMAIL, NODEMAILER_USER } = process.env;
+const { JWT_SECRET, NODEMAILER_USER } = process.env;
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -8,12 +8,18 @@ const transporter = require("../utils/nodemailerTransporter");
 const User = require("../models/user");
 const siteSettingsService = require("./siteSettingsService");
 const {
-  RESET_TOKEN_LIFETIME_MS,
-  hashResetToken,
-  createResetToken,
-  isResetToken,
+  requestEmailUpdate,
+  updateEmail,
+  validateEmailChangeLink,
+} = require("./emailChangeService");
+const {
+  TOKEN_LIFETIME_MS,
+  hashToken,
+  createToken,
+  isToken,
   resetTokenFields,
-} = require("../utils/passwordResetToken");
+  emailChangeFields,
+} = require("../utils/securityTokens");
 
 const NotFoundError = require("../errors/not-found-err");
 const ConflictError = require("../errors/conflict-err");
@@ -30,23 +36,16 @@ const {
   AUTHENTICATION_ERROR_MSG,
   RESET_TOKEN_ERROR_MSG,
   PASSWORDS_DO_NOT_MATCH_ERROR_MSG,
-  CONFLICT_UPDATE_EMAIL_ERROR_MSG,
-  REQUEST_UPDATE_EMAIL_SUBJECT,
-  REQUEST_UPDATE_EMAIL_TEXT,
   FORGOT_PASSWORD_SUBJECT,
   FORGOT_PASSWORD_TEXT,
   NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG,
   RESET_PASSWORD_SUBJECT,
   RESET_PASSWORD_TEXT,
-  WARNING_UPDATE_EMAIL_SUBJECT,
-  WARNING_UPDATE_EMAIL_TEXT,
 } = require("../utils/constants");
 
 const {
   resetPasswordEmailMarkup,
   successfullPasswordUpdateEmailMarkup,
-  emailConfirmationEmailMarkup,
-  warningOfChangingEmailMarkup,
 } = require("../utils/emailHtmlMarkup");
 
 const createUser = async ({ name, email, password }) => {
@@ -54,6 +53,15 @@ const createUser = async ({ name, email, password }) => {
 
   if (!settings.auth.signupEnabled) {
     throw new ForbiddenError("Signup is currently disabled");
+  }
+
+  if (
+    await User.exists({ email: email.trim().toLowerCase() }).collation({
+      locale: "en",
+      strength: 2,
+    })
+  ) {
+    throw new ConflictError(CONFLICT_SIGNUP_EMAIL_ERROR_MSG);
   }
 
   const hash = await bcrypt.hash(password, 10);
@@ -139,108 +147,29 @@ const updatePassword = async ({ userId, oldPassword, newPassword }) => {
 
   const result = await User.updateOne(
     { _id: user._id, password: user.password },
-    { $set: { password: hash }, $unset: resetTokenFields }
+    {
+      $set: { password: hash },
+      $unset: { ...resetTokenFields, ...emailChangeFields },
+    }
   );
   if (result.modifiedCount !== 1) {
     throw new UnauthorizedError(WRONG_PASSWORD_ERROR_MSG);
   }
 };
 
-const requestEmailUpdate = async ({ userId, newEmail }) => {
-  const user = await User.findById(userId);
-
-  if (!user) {
-    throw new NotFoundError(USER_NOT_FOUND_ERROR_MSG);
-  }
-
-  if (newEmail === user.email) {
-    throw new ConflictError(CONFLICT_UPDATE_EMAIL_ERROR_MSG);
-  }
-
-  const token = jwt.sign(
-    {
-      _id: user._id,
-      newEmail,
-    },
-    JWT_UPDATE_EMAIL,
-    {
-      expiresIn: "20m",
-    }
-  );
-
-  user.updateEmailLink = token;
-
-  await user.save();
-
-  await transporter.sendMail({
-    from: NODEMAILER_USER,
-    to: user.email,
-    subject: REQUEST_UPDATE_EMAIL_SUBJECT,
-    text: REQUEST_UPDATE_EMAIL_TEXT,
-    html: emailConfirmationEmailMarkup(token),
-  });
-
-  await transporter.sendMail({
-    from: NODEMAILER_USER,
-    to: newEmail,
-    subject: WARNING_UPDATE_EMAIL_SUBJECT,
-    text: WARNING_UPDATE_EMAIL_TEXT,
-    html: warningOfChangingEmailMarkup,
-  });
-};
-
-const updateEmail = async (updateEmailLink) => {
-  if (!updateEmailLink) {
-    throw new UnauthorizedError(AUTHENTICATION_ERROR_MSG);
-  }
-
-  let decoded;
-
-  try {
-    decoded = jwt.verify(updateEmailLink, JWT_UPDATE_EMAIL);
-  } catch {
-    throw new UnauthorizedError(RESET_TOKEN_ERROR_MSG);
-  }
-
-  const user = await User.findById(decoded._id).select("+updateEmailLink");
-
-  if (!user) {
-    throw new NotFoundError(USER_NOT_FOUND_ERROR_MSG);
-  }
-
-  if (user.updateEmailLink !== updateEmailLink) {
-    throw new UnauthorizedError(RESET_TOKEN_ERROR_MSG);
-  }
-
-  const existingUser = await User.findOne({
-    email: decoded.newEmail,
-  });
-
-  if (existingUser) {
-    throw new ConflictError(CONFLICT_UPDATE_EMAIL_ERROR_MSG);
-  }
-
-  user.email = decoded.newEmail;
-  user.updateEmailLink = "";
-
-  await user.save();
-
-  return user;
-};
-
 // Password reset
 const forgotPassword = async (email) => {
   const normalizedEmail = email?.trim().toLowerCase();
-  const token = createResetToken();
+  const token = createToken();
   const user = await User.findOneAndUpdate(
     { email: normalizedEmail },
     {
       $set: {
-        resetPasswordTokenHash: hashResetToken(token),
-        resetPasswordExpiresAt: new Date(Date.now() + RESET_TOKEN_LIFETIME_MS),
+        resetPasswordTokenHash: hashToken(token),
+        resetPasswordExpiresAt: new Date(Date.now() + TOKEN_LIFETIME_MS),
       },
     },
-    { new: true }
+    { new: true, collation: { locale: "en", strength: 2 } }
   );
 
   if (user) {
@@ -261,10 +190,10 @@ const invalidResetLink = () => {
 };
 
 const findResetUser = async (token) => {
-  if (!isResetToken(token)) {
+  if (!isToken(token)) {
     throw invalidResetLink();
   }
-  const tokenHash = hashResetToken(token);
+  const tokenHash = hashToken(token);
   const now = new Date();
   const user = await User.findOne({
     resetPasswordTokenHash: tokenHash,
@@ -313,12 +242,12 @@ const resetPassword = async ({ token, newPassword, confirmPassword }) => {
     {
       _id: user._id,
       password: user.password,
-      resetPasswordTokenHash: hashResetToken(token),
+      resetPasswordTokenHash: hashToken(token),
       resetPasswordExpiresAt: { $gt: new Date() },
     },
     {
       $set: { password: hash },
-      $unset: { ...resetTokenFields, updateEmailLink: "" },
+      $unset: { ...resetTokenFields, ...emailChangeFields },
       $inc: { tokenVersion: 1 },
     }
   );
@@ -350,4 +279,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   validateResetPasswordLink,
+  validateEmailChangeLink,
 };

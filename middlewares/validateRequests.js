@@ -37,13 +37,14 @@ const validateSignin = celebrate({
 
 const validateRequestEmailUpdate = celebrate({
   body: Joi.object().keys({
-    newEmail: Joi.string().email().required(),
+    newEmail: Joi.string().trim().lowercase().email().required(),
+    currentPassword: Joi.string().min(8).required(),
   }),
 });
 
 const validateUpdateUserEmail = celebrate({
   params: Joi.object({
-    updateEmailLink: Joi.string().required(),
+    token: Joi.string().max(2048).required(),
   }),
 });
 

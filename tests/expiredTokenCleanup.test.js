@@ -1,8 +1,6 @@
 jest.mock("../models/user", () => ({ updateMany: jest.fn() }));
 const User = require("../models/user");
-const {
-  startPasswordResetCleanup,
-} = require("../services/passwordResetCleanup");
+const { startExpiredTokenCleanup } = require("../services/expiredTokenCleanup");
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -14,13 +12,13 @@ afterEach(() => {
 });
 
 test("cleans at startup and every five minutes, and stops on shutdown", async () => {
-  const stop = await startPasswordResetCleanup();
-  expect(User.updateMany).toHaveBeenCalledTimes(1);
-  await jest.advanceTimersByTimeAsync(5 * 60 * 1000);
+  const stop = await startExpiredTokenCleanup();
   expect(User.updateMany).toHaveBeenCalledTimes(2);
+  await jest.advanceTimersByTimeAsync(5 * 60 * 1000);
+  expect(User.updateMany).toHaveBeenCalledTimes(4);
   stop();
   await jest.advanceTimersByTimeAsync(10 * 60 * 1000);
-  expect(User.updateMany).toHaveBeenCalledTimes(2);
+  expect(User.updateMany).toHaveBeenCalledTimes(4);
 });
 
 test("a cleanup failure is retried without leaking the error contents", async () => {
@@ -28,12 +26,12 @@ test("a cleanup failure is retried without leaking the error contents", async ()
   User.updateMany.mockRejectedValueOnce(
     new Error("private-database-connection")
   );
-  const stop = await startPasswordResetCleanup();
+  const stop = await startExpiredTokenCleanup();
   expect(log).toHaveBeenCalledWith(
-    "Password reset cleanup failed; will retry in five minutes"
+    "Expired token cleanup failed; will retry in five minutes"
   );
   await jest.advanceTimersByTimeAsync(5 * 60 * 1000);
-  expect(User.updateMany).toHaveBeenCalledTimes(2);
+  expect(User.updateMany).toHaveBeenCalledTimes(4);
   stop();
 });
 
@@ -45,9 +43,9 @@ test("does not start overlapping cleanups", async () => {
         finish = resolve;
       })
   );
-  const starting = startPasswordResetCleanup();
+  const starting = startExpiredTokenCleanup();
   await jest.advanceTimersByTimeAsync(10 * 60 * 1000);
-  expect(User.updateMany).toHaveBeenCalledTimes(1);
+  expect(User.updateMany).toHaveBeenCalledTimes(2);
   finish({ modifiedCount: 0 });
   const stop = await starting;
   stop();

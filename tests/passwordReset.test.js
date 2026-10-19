@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const { hashResetToken } = require("../utils/passwordResetToken");
+const { hashToken } = require("../utils/securityTokens");
 
 jest.mock("../utils/nodemailerTransporter", () => ({
   sendMail: jest.fn().mockResolvedValue(),
@@ -43,7 +43,7 @@ describe("passwordResetService", () => {
       const token = transporter.sendMail.mock.calls[0][0].html.match(
         /reset-password\/([a-f0-9]{64})/
       )[1];
-      expect(saved.resetPasswordTokenHash).toBe(hashResetToken(token));
+      expect(saved.resetPasswordTokenHash).toBe(hashToken(token));
       expect(saved.resetPasswordTokenHash).not.toBe(token);
       expect(saved.resetPasswordExpiresAt.getTime()).toBeGreaterThan(
         Date.now() + 19 * 60 * 1000
@@ -153,7 +153,7 @@ describe("passwordResetService", () => {
         "+password +resetPasswordTokenHash"
       );
 
-      expect(saved.resetPasswordTokenHash).toBe(hashResetToken(token));
+      expect(saved.resetPasswordTokenHash).toBe(hashToken(token));
       expect(await bcrypt.compare("12345678", saved.password)).toBe(true);
 
       expect(transporter.sendMail).not.toHaveBeenCalled();
@@ -204,7 +204,7 @@ describe("passwordResetService", () => {
 
       const token = await createResetToken(user);
 
-      user.resetPasswordTokenHash = hashResetToken("another-token");
+      user.resetPasswordTokenHash = hashToken("another-token");
       await user.save();
 
       await expect(

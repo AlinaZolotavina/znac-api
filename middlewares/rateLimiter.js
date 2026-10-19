@@ -98,7 +98,19 @@ const hashtagRateLimiter = createRateLimiter(
   "Too many hashtag updates. Please try again later."
 );
 
+const emailChangeRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getUserRateLimitKey,
+  message: {
+    message: "Too many email change requests. Please try again later.",
+  },
+});
+
 module.exports = {
+  emailChangeRateLimiter,
   publicReadRateLimiter,
   protectedReadRateLimiter,
   authRateLimiter,

@@ -31,17 +31,12 @@ const SUCCESSFUL_PASSWORD_UPDATE_MSG = "Your password has been updated";
 const EMAIL_SENT_SUCCESSFULLY_MSG =
   "Email has been sent, please follow the instructions.";
 
-const REQUEST_UPDATE_EMAIL_SUBJECT = "Confirm your email";
-const REQUEST_UPDATE_EMAIL_TEXT = "We got a request to change your email.";
 const FORGOT_PASSWORD_SUBJECT = "Reset your password";
 const FORGOT_PASSWORD_TEXT = "We got a request to reset your password.";
 const NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG =
   "The new password is the same as the previous one";
 const RESET_PASSWORD_SUBJECT = "Your password has been changed";
 const RESET_PASSWORD_TEXT = "Your password has been changed";
-const WARNING_UPDATE_EMAIL_SUBJECT =
-  "Your email will be using on the www.znac.org";
-const WARNING_UPDATE_EMAIL_TEXT = "You or someone else want to use this email.";
 
 const NO_PHOTO_TO_UPLOAD_ERROR_MSG = "No photo to upload";
 const HASHTAG_NOT_FOUND_ERROR_MSG = "Hashtag not found";
@@ -80,15 +75,11 @@ module.exports = {
   PROJECT_NOT_FOUND_ERROR_MSG,
   SUCCESSFUL_PROJECT_DELETE_MSG,
   EMAIL_SENT_SUCCESSFULLY_MSG,
-  REQUEST_UPDATE_EMAIL_SUBJECT,
-  REQUEST_UPDATE_EMAIL_TEXT,
   FORGOT_PASSWORD_SUBJECT,
   FORGOT_PASSWORD_TEXT,
   NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG,
   RESET_PASSWORD_SUBJECT,
   RESET_PASSWORD_TEXT,
-  WARNING_UPDATE_EMAIL_SUBJECT,
-  WARNING_UPDATE_EMAIL_TEXT,
   NO_PHOTO_TO_UPLOAD_ERROR_MSG,
   HASHTAG_NOT_FOUND_ERROR_MSG,
   CONFLICT_HASHTAG_ERROR_MSG,
