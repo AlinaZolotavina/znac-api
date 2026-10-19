@@ -37,7 +37,7 @@ describe("email update", () => {
         newEmail: "new@test.com",
       });
 
-      const saved = await User.findById(user._id);
+      const saved = await User.findById(user._id).select("+updateEmailLink");
 
       expect(saved.updateEmailLink).toEqual(expect.any(String));
 
@@ -112,7 +112,7 @@ describe("email update", () => {
 
       expect(updated.email).toBe("new@test.com");
 
-      const saved = await User.findById(user._id);
+      const saved = await User.findById(user._id).select("+updateEmailLink");
 
       expect(saved.email).toBe("new@test.com");
       expect(saved.updateEmailLink).toBe("");

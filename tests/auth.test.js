@@ -189,7 +189,7 @@ describe("Authentication", () => {
 
       const user = await User.findOne({
         email: "test@test.com",
-      });
+      }).select("+updateEmailLink");
 
       expect(user.updateEmailLink).toEqual(expect.any(String));
       expect(user.updateEmailLink).not.toBe("");
@@ -290,7 +290,7 @@ describe("Authentication", () => {
 
       expect(response.body.user.email).toBe("new@test.com");
 
-      const saved = await User.findById(user._id);
+      const saved = await User.findById(user._id).select("+updateEmailLink");
 
       expect(saved.email).toBe("new@test.com");
       expect(saved.updateEmailLink).toBe("");

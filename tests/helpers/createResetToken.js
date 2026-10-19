@@ -1,16 +1,19 @@
-const jwt = require("jsonwebtoken");
+const {
+  createResetToken,
+  hashResetToken,
+  RESET_TOKEN_LIFETIME_MS,
+} = require("../../utils/passwordResetToken");
 
-const { JWT_RESET_PASSWORD } = process.env;
-
-const createResetToken = async (user) => {
-  const token = jwt.sign({ _id: user._id }, JWT_RESET_PASSWORD, {
-    expiresIn: "20m",
-  });
-
-  user.resetPasswordLink = token;
+const createUserResetToken = async (
+  user,
+  expiresAt = new Date(Date.now() + RESET_TOKEN_LIFETIME_MS)
+) => {
+  const token = createResetToken();
+  user.resetPasswordTokenHash = hashResetToken(token);
+  user.resetPasswordExpiresAt = expiresAt;
   await user.save();
 
   return token;
 };
 
-module.exports = createResetToken;
+module.exports = createUserResetToken;

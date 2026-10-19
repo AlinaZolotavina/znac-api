@@ -12,6 +12,7 @@ const {
   logout,
   forgotPassword,
   resetPassword,
+  validateResetPasswordLink,
 } = require("../controllers/users");
 
 router.post("/signup", authRateLimiter, validateSignup, createUser);
@@ -24,10 +25,15 @@ router.put(
   forgotPassword
 );
 router.put(
-  "/reset-password/:resetPasswordLink",
+  "/reset-password/:token",
   authRateLimiter,
   validateResetPassword,
   resetPassword
+);
+router.get(
+  "/reset-password/:token",
+  authRateLimiter,
+  validateResetPasswordLink
 );
 
 module.exports = router;

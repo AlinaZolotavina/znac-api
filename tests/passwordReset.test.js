@@ -1,6 +1,5 @@
-const { JWT_RESET_PASSWORD } = process.env;
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const { hashResetToken } = require("../utils/passwordResetToken");
 
 jest.mock("../utils/nodemailerTransporter", () => ({
   sendMail: jest.fn().mockResolvedValue(),
@@ -18,10 +17,9 @@ const createResetToken = require("./helpers/createResetToken");
 const {
   AUTHENTICATION_ERROR_MSG,
   RESET_TOKEN_ERROR_MSG,
-  NO_RESET_TOKEN_ERROR_MSG,
   PASSWORDS_DO_NOT_MATCH_ERROR_MSG,
   NEW_PASSWORD_SAME_AS_PRIVIOUS_ERROR_MSG,
-} = require("../utils/constants"); // ← см. замечание ниже
+} = require("../utils/constants");
 
 beforeAll(mongo.connect);
 
@@ -39,13 +37,17 @@ describe("passwordResetService", () => {
 
       await userService.forgotPassword(user.email);
 
-      const saved = await User.findById(user._id);
-
-      expect(saved.resetPasswordLink).toEqual(expect.any(String));
-
-      expect(() =>
-        jwt.verify(saved.resetPasswordLink, JWT_RESET_PASSWORD)
-      ).not.toThrow();
+      const saved = await User.findById(user._id).select(
+        "+resetPasswordTokenHash +resetPasswordExpiresAt"
+      );
+      const token = transporter.sendMail.mock.calls[0][0].html.match(
+        /reset-password\/([a-f0-9]{64})/
+      )[1];
+      expect(saved.resetPasswordTokenHash).toBe(hashResetToken(token));
+      expect(saved.resetPasswordTokenHash).not.toBe(token);
+      expect(saved.resetPasswordExpiresAt.getTime()).toBeGreaterThan(
+        Date.now() + 19 * 60 * 1000
+      );
 
       expect(transporter.sendMail).toHaveBeenCalledTimes(1);
 
@@ -63,9 +65,11 @@ describe("passwordResetService", () => {
 
       await userService.forgotPassword("   ALINA@TEST.COM   ");
 
-      const saved = await User.findById(user._id);
+      const saved = await User.findById(user._id).select(
+        "+resetPasswordTokenHash"
+      );
 
-      expect(saved.resetPasswordLink).toEqual(expect.any(String));
+      expect(saved.resetPasswordTokenHash).toMatch(/^[a-f0-9]{64}$/);
 
       expect(transporter.sendMail).toHaveBeenCalledTimes(1);
     });
@@ -89,10 +93,12 @@ describe("passwordResetService", () => {
         "SMTP unavailable"
       );
 
-      const saved = await User.findById(user._id);
+      const saved = await User.findById(user._id).select(
+        "+resetPasswordTokenHash"
+      );
 
       // токен уже сохранён до попытки отправки письма
-      expect(saved.resetPasswordLink).toEqual(expect.any(String));
+      expect(saved.resetPasswordTokenHash).toMatch(/^[a-f0-9]{64}$/);
 
       expect(transporter.sendMail).toHaveBeenCalledTimes(1);
     });
@@ -105,14 +111,17 @@ describe("passwordResetService", () => {
       const token = await createResetToken(user);
 
       await userService.resetPassword({
-        resetPasswordLink: token,
+        token: token,
         newPassword: "87654321",
         confirmPassword: "87654321",
       });
 
-      const saved = await User.findById(user._id).select("+password");
+      const saved = await User.findById(user._id).select(
+        "+password +resetPasswordTokenHash +resetPasswordExpiresAt"
+      );
 
-      expect(saved.resetPasswordLink).toBe("");
+      expect(saved.resetPasswordTokenHash).toBeUndefined();
+      expect(saved.resetPasswordExpiresAt).toBeUndefined();
 
       expect(await bcrypt.compare("87654321", saved.password)).toBe(true);
 
@@ -134,15 +143,17 @@ describe("passwordResetService", () => {
 
       await expect(
         userService.resetPassword({
-          resetPasswordLink: token,
+          token: token,
           newPassword: "87654321",
           confirmPassword: "11111111",
         })
       ).rejects.toThrow(PASSWORDS_DO_NOT_MATCH_ERROR_MSG);
 
-      const saved = await User.findById(user._id).select("+password");
+      const saved = await User.findById(user._id).select(
+        "+password +resetPasswordTokenHash"
+      );
 
-      expect(saved.resetPasswordLink).toBe(token);
+      expect(saved.resetPasswordTokenHash).toBe(hashResetToken(token));
       expect(await bcrypt.compare("12345678", saved.password)).toBe(true);
 
       expect(transporter.sendMail).not.toHaveBeenCalled();
@@ -151,7 +162,7 @@ describe("passwordResetService", () => {
     test("should reject invalid token", async () => {
       await expect(
         userService.resetPassword({
-          resetPasswordLink: "invalid-token",
+          token: "invalid-token",
           newPassword: "87654321",
           confirmPassword: "87654321",
         })
@@ -163,7 +174,7 @@ describe("passwordResetService", () => {
     test("should reject when reset token is missing", async () => {
       await expect(
         userService.resetPassword({
-          resetPasswordLink: "",
+          token: "",
           newPassword: "87654321",
           confirmPassword: "87654321",
         })
@@ -179,11 +190,11 @@ describe("passwordResetService", () => {
 
       await expect(
         userService.resetPassword({
-          resetPasswordLink: token,
+          token: token,
           newPassword: "87654321",
           confirmPassword: "87654321",
         })
-      ).rejects.toThrow(NO_RESET_TOKEN_ERROR_MSG);
+      ).rejects.toThrow(RESET_TOKEN_ERROR_MSG);
 
       expect(transporter.sendMail).not.toHaveBeenCalled();
     });
@@ -193,12 +204,12 @@ describe("passwordResetService", () => {
 
       const token = await createResetToken(user);
 
-      user.resetPasswordLink = "another-token";
+      user.resetPasswordTokenHash = hashResetToken("another-token");
       await user.save();
 
       await expect(
         userService.resetPassword({
-          resetPasswordLink: token,
+          token: token,
           newPassword: "87654321",
           confirmPassword: "87654321",
         })
@@ -214,7 +225,7 @@ describe("passwordResetService", () => {
 
       await expect(
         userService.resetPassword({
-          resetPasswordLink: token,
+          token: token,
           newPassword: "12345678",
           confirmPassword: "12345678",
         })
@@ -232,18 +243,21 @@ describe("passwordResetService", () => {
 
       await expect(
         userService.resetPassword({
-          resetPasswordLink: token,
+          token: token,
           newPassword: "87654321",
           confirmPassword: "87654321",
         })
       ).resolves.toBeUndefined();
 
-      const saved = await User.findById(user._id).select("+password");
+      const saved = await User.findById(user._id).select(
+        "+password +resetPasswordTokenHash +resetPasswordExpiresAt"
+      );
 
       expect(await bcrypt.compare("87654321", saved.password)).toBe(true);
       expect(await bcrypt.compare("12345678", saved.password)).toBe(false);
 
-      expect(saved.resetPasswordLink).toBe("");
+      expect(saved.resetPasswordTokenHash).toBeUndefined();
+      expect(saved.resetPasswordExpiresAt).toBeUndefined();
 
       expect(transporter.sendMail).toHaveBeenCalledTimes(1);
     });

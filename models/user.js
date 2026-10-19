@@ -23,13 +23,25 @@ const userSchema = new mongoose.Schema({
     minLength: 8,
     select: false,
   },
-  resetPasswordLink: {
+  resetPasswordTokenHash: {
     type: String,
-    default: "",
+    select: false,
+    index: true,
+  },
+  resetPasswordExpiresAt: {
+    type: Date,
+    select: false,
+    index: true,
+  },
+  tokenVersion: {
+    type: Number,
+    default: 0,
+    select: false,
   },
   updateEmailLink: {
     type: String,
     default: "",
+    select: false,
   },
   role: {
     type: String,
@@ -38,9 +50,18 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// Only public profile fields may leave the API, including for older documents.
+userSchema.set("toJSON", {
+  transform: (_doc, result) => ({
+    _id: result._id,
+    email: result.email,
+    role: result.role,
+  }),
+});
+
 userSchema.statics.findUserByCredentials = function findUser(email, password) {
   return this.findOne({ email })
-    .select("+password")
+    .select("+password +tokenVersion")
     .then((user) => {
       if (!user) {
         throw new UnauthorizedError(WRONG_EMAIL_OR_PASSWORD_ERROR_MSG);

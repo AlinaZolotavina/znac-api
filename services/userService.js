@@ -1,5 +1,4 @@
-const { JWT_SECRET, JWT_RESET_PASSWORD, JWT_UPDATE_EMAIL, NODEMAILER_USER } =
-  process.env;
+const { JWT_SECRET, JWT_UPDATE_EMAIL, NODEMAILER_USER } = process.env;
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -8,6 +7,13 @@ const transporter = require("../utils/nodemailerTransporter");
 
 const User = require("../models/user");
 const siteSettingsService = require("./siteSettingsService");
+const {
+  RESET_TOKEN_LIFETIME_MS,
+  hashResetToken,
+  createResetToken,
+  isResetToken,
+  resetTokenFields,
+} = require("../utils/passwordResetToken");
 
 const NotFoundError = require("../errors/not-found-err");
 const ConflictError = require("../errors/conflict-err");
@@ -23,7 +29,6 @@ const {
   WRONG_PASSWORD_ERROR_MSG,
   AUTHENTICATION_ERROR_MSG,
   RESET_TOKEN_ERROR_MSG,
-  NO_RESET_TOKEN_ERROR_MSG,
   PASSWORDS_DO_NOT_MATCH_ERROR_MSG,
   CONFLICT_UPDATE_EMAIL_ERROR_MSG,
   REQUEST_UPDATE_EMAIL_SUBJECT,
@@ -77,6 +82,7 @@ const login = async ({ email, password }) => {
     {
       _id: user._id,
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     },
     JWT_SECRET,
     {
@@ -131,9 +137,13 @@ const updatePassword = async ({ userId, oldPassword, newPassword }) => {
 
   const hash = await bcrypt.hash(newPassword, 10);
 
-  user.password = hash;
-
-  await user.save();
+  const result = await User.updateOne(
+    { _id: user._id, password: user.password },
+    { $set: { password: hash }, $unset: resetTokenFields }
+  );
+  if (result.modifiedCount !== 1) {
+    throw new UnauthorizedError(WRONG_PASSWORD_ERROR_MSG);
+  }
 };
 
 const requestEmailUpdate = async ({ userId, newEmail }) => {
@@ -192,7 +202,7 @@ const updateEmail = async (updateEmailLink) => {
     throw new UnauthorizedError(RESET_TOKEN_ERROR_MSG);
   }
 
-  const user = await User.findById(decoded._id);
+  const user = await User.findById(decoded._id).select("+updateEmailLink");
 
   if (!user) {
     throw new NotFoundError(USER_NOT_FOUND_ERROR_MSG);
@@ -221,26 +231,19 @@ const updateEmail = async (updateEmailLink) => {
 // Password reset
 const forgotPassword = async (email) => {
   const normalizedEmail = email?.trim().toLowerCase();
-
-  const user = await User.findOne({
-    email: normalizedEmail,
-  });
+  const token = createResetToken();
+  const user = await User.findOneAndUpdate(
+    { email: normalizedEmail },
+    {
+      $set: {
+        resetPasswordTokenHash: hashResetToken(token),
+        resetPasswordExpiresAt: new Date(Date.now() + RESET_TOKEN_LIFETIME_MS),
+      },
+    },
+    { new: true }
+  );
 
   if (user) {
-    const token = jwt.sign(
-      {
-        _id: user._id,
-      },
-      JWT_RESET_PASSWORD,
-      {
-        expiresIn: "20m",
-      }
-    );
-
-    user.resetPasswordLink = token;
-
-    await user.save();
-
     await transporter.sendMail({
       from: NODEMAILER_USER,
       to: user.email,
@@ -251,12 +254,44 @@ const forgotPassword = async (email) => {
   }
 };
 
-const resetPassword = async ({
-  resetPasswordLink,
-  newPassword,
-  confirmPassword,
-}) => {
-  if (!resetPasswordLink) {
+const invalidResetLink = () => {
+  const error = new UnauthorizedError(RESET_TOKEN_ERROR_MSG);
+  error.code = "RESET_LINK_INVALID";
+  return error;
+};
+
+const findResetUser = async (token) => {
+  if (!isResetToken(token)) {
+    throw invalidResetLink();
+  }
+  const tokenHash = hashResetToken(token);
+  const now = new Date();
+  const user = await User.findOne({
+    resetPasswordTokenHash: tokenHash,
+    resetPasswordExpiresAt: { $gt: now },
+  }).select("+password +resetPasswordExpiresAt");
+
+  if (!user) {
+    // Match the presented hash so a concurrent new link cannot be cleared.
+    await User.updateOne(
+      {
+        resetPasswordTokenHash: tokenHash,
+        resetPasswordExpiresAt: { $lte: now },
+      },
+      { $unset: resetTokenFields }
+    );
+    throw invalidResetLink();
+  }
+  return user;
+};
+
+const validateResetPasswordLink = async (token) => {
+  const user = await findResetUser(token);
+  return { expiresAt: user.resetPasswordExpiresAt };
+};
+
+const resetPassword = async ({ token, newPassword, confirmPassword }) => {
+  if (!token) {
     throw new UnauthorizedError(AUTHENTICATION_ERROR_MSG);
   }
 
@@ -264,23 +299,7 @@ const resetPassword = async ({
     throw new BadRequestError(PASSWORDS_DO_NOT_MATCH_ERROR_MSG);
   }
 
-  let decoded;
-
-  try {
-    decoded = jwt.verify(resetPasswordLink, JWT_RESET_PASSWORD);
-  } catch {
-    throw new UnauthorizedError(RESET_TOKEN_ERROR_MSG);
-  }
-
-  const user = await User.findById(decoded._id).select("+password");
-
-  if (!user) {
-    throw new NotFoundError(NO_RESET_TOKEN_ERROR_MSG);
-  }
-
-  if (user.resetPasswordLink !== resetPasswordLink) {
-    throw new UnauthorizedError(RESET_TOKEN_ERROR_MSG);
-  }
+  const user = await findResetUser(token);
 
   const matched = await bcrypt.compare(newPassword, user.password);
 
@@ -290,10 +309,22 @@ const resetPassword = async ({
 
   const hash = await bcrypt.hash(newPassword, 10);
 
-  user.password = hash;
-  user.resetPasswordLink = "";
-
-  await user.save();
+  const result = await User.updateOne(
+    {
+      _id: user._id,
+      password: user.password,
+      resetPasswordTokenHash: hashResetToken(token),
+      resetPasswordExpiresAt: { $gt: new Date() },
+    },
+    {
+      $set: { password: hash },
+      $unset: { ...resetTokenFields, updateEmailLink: "" },
+      $inc: { tokenVersion: 1 },
+    }
+  );
+  if (result.modifiedCount !== 1) {
+    throw invalidResetLink();
+  }
 
   try {
     await transporter.sendMail({
@@ -303,8 +334,8 @@ const resetPassword = async ({
       text: RESET_PASSWORD_TEXT,
       html: successfullPasswordUpdateEmailMarkup,
     });
-  } catch (err) {
-    console.error("Failed to send password reset confirmation email:", err);
+  } catch {
+    console.error("Failed to send password reset confirmation email");
   }
 };
 
@@ -318,4 +349,5 @@ module.exports = {
   updateEmail,
   forgotPassword,
   resetPassword,
+  validateResetPasswordLink,
 };

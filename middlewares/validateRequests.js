@@ -55,7 +55,7 @@ const validateForgotPassword = celebrate({
 
 const validateResetPassword = celebrate({
   params: Joi.object().keys({
-    resetPasswordLink: Joi.string().required(),
+    token: Joi.string().required(),
   }),
   body: Joi.object().keys({
     newPassword: Joi.string().min(8).required(),

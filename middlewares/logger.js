@@ -1,6 +1,13 @@
 const winston = require("winston");
 const expressWinston = require("express-winston");
 const DailyRotateFile = require("winston-daily-rotate-file");
+const { redactSecrets } = require("../utils/redactSecrets");
+
+const safeLogFormat = () =>
+  winston.format.combine(
+    winston.format((info) => redactSecrets(info))(),
+    winston.format.json()
+  );
 
 const fs = require("fs");
 const path = require("path");
@@ -20,7 +27,7 @@ const requestLogger = expressWinston.logger({
       maxFiles: "14d",
     }),
   ],
-  format: winston.format.json(),
+  format: safeLogFormat(),
 });
 
 const errorLogger = expressWinston.errorLogger({
@@ -32,7 +39,7 @@ const errorLogger = expressWinston.errorLogger({
       maxFiles: "14d",
     }),
   ],
-  format: winston.format.json(),
+  format: safeLogFormat(),
 });
 
 module.exports = {

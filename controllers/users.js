@@ -123,16 +123,32 @@ const forgotPassword = (req, res, next) => {
 };
 
 const resetPassword = (req, res, next) => {
+  res.set("Cache-Control", "no-store");
   userService
     .resetPassword({
-      resetPasswordLink: req.params.resetPasswordLink,
+      token: req.params.token,
       ...req.body,
     })
     .then(() =>
-      res.status(200).send({
-        message: SUCCESSFUL_PASSWORD_UPDATE_MSG,
-      })
+      res
+        .clearCookie("jwt", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        })
+        .status(200)
+        .send({
+          message: SUCCESSFUL_PASSWORD_UPDATE_MSG,
+        })
     )
+    .catch(next);
+};
+
+const validateResetPasswordLink = (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  userService
+    .validateResetPasswordLink(req.params.token)
+    .then((result) => res.send(result))
     .catch(next);
 };
 
@@ -146,4 +162,5 @@ module.exports = {
   updatePassword,
   forgotPassword,
   resetPassword,
+  validateResetPasswordLink,
 };

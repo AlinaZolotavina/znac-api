@@ -1,5 +1,6 @@
 const { FORBIDDEN_ORIGIN_ERROR_MSG } = require("../utils/constants");
 const corsOptions = require("../utils/corsOptions");
+const { redactText } = require("../utils/redactSecrets");
 
 const safeMethods = ["GET", "HEAD", "OPTIONS"];
 const publicUnsafeRoutes = [
@@ -15,7 +16,9 @@ const isPublicUnsafeRoute = (req) =>
 
 const rejectOrigin = (req, res, origin = "missing") => {
   console.warn(
-    `Blocked ${req.method} ${req.originalUrl} from origin: ${origin}`
+    redactText(
+      `Blocked ${req.method} ${req.originalUrl} from origin: ${origin}`
+    )
   );
 
   return res.status(403).send({

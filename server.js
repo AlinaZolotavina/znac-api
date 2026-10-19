@@ -4,6 +4,9 @@ const mongoose = require("mongoose");
 
 const app = require("./app");
 const ensureUploadsDirectories = require("./utils/ensureUploadsDirectories");
+const {
+  startPasswordResetCleanup,
+} = require("./services/passwordResetCleanup");
 
 const { PORT, DB_URL } = process.env;
 
@@ -16,12 +19,14 @@ requiredEnv.forEach((name) => {
 });
 
 let server;
+let stopPasswordResetCleanup;
 
 const start = async () => {
   try {
     ensureUploadsDirectories();
 
     await mongoose.connect(DB_URL);
+    stopPasswordResetCleanup = await startPasswordResetCleanup();
 
     console.log("MongoDB connected");
 
@@ -36,6 +41,7 @@ const start = async () => {
 
 const shutdown = async () => {
   console.log("Shutting down server...");
+  if (stopPasswordResetCleanup) stopPasswordResetCleanup();
 
   try {
     await mongoose.connection.close();
