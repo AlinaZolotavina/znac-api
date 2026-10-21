@@ -6,6 +6,12 @@ const USER_NOT_FOUND_ERROR_MSG = "User is not found";
 const PHOTO_NOT_FOUND_ERROR_MSG = "Photo is not found";
 const SUCCESSFUL_PHOTO_DELETE_MSG = "The photo has been deleted";
 const POST_NOT_FOUND_ERROR_MSG = "Post is not found";
+const POST_THEMES = Object.freeze([
+  "Development",
+  "Design",
+  "Travel",
+  "Daily life",
+]);
 const SUCCESSFUL_POST_DELETE_MSG = "Post is deleted";
 const PROJECT_NOT_FOUND_ERROR_MSG = "Project is not found";
 const SUCCESSFUL_PROJECT_DELETE_MSG = "Project is deleted";
@@ -53,6 +59,7 @@ module.exports = {
   USER_NOT_FOUND_ERROR_MSG,
   PHOTO_NOT_FOUND_ERROR_MSG,
   POST_NOT_FOUND_ERROR_MSG,
+  POST_THEMES,
   BAD_URL_ERROR_MSG,
   IMAGE_BAD_URL_ERROR_MSG,
   BAD_EMAIL_ERROR_MSG,

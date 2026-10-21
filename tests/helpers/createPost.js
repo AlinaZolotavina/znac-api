@@ -3,7 +3,7 @@ const Post = require("../../models/post");
 const createPost = async (ownerId, overrides = {}) =>
   Post.create({
     owner: ownerId,
-    theme: "Backend",
+    theme: "Development",
     icon: "💻",
     title: "Node.js",
     photoLink: "https://example.com/photo.jpg",

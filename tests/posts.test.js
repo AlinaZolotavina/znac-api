@@ -12,6 +12,7 @@ const createUser = require("./helpers/createUser");
 const login = require("./helpers/login");
 const createPost = require("./helpers/createPost");
 const getUploadsDirectory = require("../utils/getUploadsDirectory");
+const migratePostThemes = require("../scripts/migratePostThemes");
 
 const {
   POST_NOT_FOUND_ERROR_MSG,
@@ -139,7 +140,7 @@ describe("Posts", () => {
         .post("/posts")
         .set("Cookie", cookie)
         .send({
-          theme: "Backend",
+          theme: "Development",
           icon: "💻",
           title: "Node.js",
           photoLink: "https://example.com/photo.jpg",
@@ -173,7 +174,7 @@ describe("Posts", () => {
         .post("/posts")
         .set("Cookie", cookie)
         .send({
-          theme: "Backend",
+          theme: "Development",
           icon: "💻",
           title: "Node.js",
           hashtags: "Node",
@@ -199,7 +200,7 @@ describe("Posts", () => {
         .post("/posts")
         .set("Cookie", cookie)
         .send({
-          theme: "Backend",
+          theme: "Development",
           icon: "рџ’»",
           title,
           hashtags: "node",
@@ -220,7 +221,7 @@ describe("Posts", () => {
         .post("/posts")
         .set("Cookie", cookie)
         .send({
-          theme: "Backend",
+          theme: "Development",
           icon: "рџ’»",
           title: "a".repeat(71),
           hashtags: "node",
@@ -253,7 +254,7 @@ describe("Posts", () => {
 
     test("should require authentication", async () => {
       const response = await request(app).post("/posts").send({
-        theme: "Backend",
+        theme: "Development",
         icon: "💻",
         title: "Node.js",
         hashtags: "node",
@@ -463,6 +464,528 @@ describe("Posts", () => {
       expect(response.status).toBe(200);
       await expect(fs.stat(filePath)).rejects.toThrow();
       await expect(fs.stat(thumbnailPath)).rejects.toThrow();
+    });
+  });
+
+  describe("Categories", () => {
+    const themes = ["Development", "Design", "Travel", "Daily life"];
+    const invalidThemes = [
+      "Web development",
+      "Web design",
+      "Books",
+      "Backend",
+      "",
+    ];
+    const data = {
+      theme: "Development",
+      icon: "js",
+      title: "An article",
+      hashtags: "node express",
+      text: "Post text",
+    };
+    const updateData = {
+      newTheme: data.theme,
+      newIcon: data.icon,
+      newTitle: data.title,
+      newHashtags: data.hashtags,
+      newText: data.text,
+    };
+
+    let user;
+    let cookie;
+
+    beforeEach(async () => {
+      user = await createUser();
+      cookie = await login();
+    });
+
+    describe("API validation and filtering", () => {
+      test.each(themes)("creates a post with %s", async (theme) => {
+        const response = await request(app)
+          .post("/posts")
+          .set("Cookie", cookie)
+          .send({ ...data, theme });
+
+        expect(response.status).toBe(201);
+        expect(response.body.theme).toBe(theme);
+        expect((await Post.findById(response.body._id)).theme).toBe(theme);
+      });
+
+      test.each(invalidThemes)("rejects creation with %s", async (theme) => {
+        const response = await request(app)
+          .post("/posts")
+          .set("Cookie", cookie)
+          .send({ ...data, theme });
+
+        expect(response.status).toBe(400);
+        expect(await Post.countDocuments()).toBe(0);
+      });
+
+      test.each(themes)("updates a post to %s", async (newTheme) => {
+        const post = await createPost(user._id);
+        const response = await request(app)
+          .patch(`/posts/${post._id}`)
+          .set("Cookie", cookie)
+          .send({ ...updateData, newTheme });
+
+        expect(response.status).toBe(200);
+        expect(response.body.theme).toBe(newTheme);
+        expect((await Post.findById(post._id)).theme).toBe(newTheme);
+      });
+
+      test.each(invalidThemes)("rejects editing to %s", async (newTheme) => {
+        const post = await createPost(user._id);
+        const response = await request(app)
+          .patch(`/posts/${post._id}`)
+          .set("Cookie", cookie)
+          .send({ ...updateData, newTheme });
+
+        expect(response.status).toBe(400);
+        expect((await Post.findById(post._id)).theme).toBe("Development");
+      });
+
+      test.each(themes)("filters and searches by %s", async (theme) => {
+        await Promise.all(
+          themes.map((postTheme) =>
+            createPost(user._id, {
+              theme: postTheme,
+              title: "Matching article",
+            })
+          )
+        );
+        await createPost(user._id, { theme, title: "Other article" });
+
+        const filtered = await request(app).get("/posts").query({ theme });
+        expect(filtered.status).toBe(200);
+        expect(filtered.body.total).toBe(2);
+        expect(filtered.body.data.map((post) => post.theme)).toEqual([
+          theme,
+          theme,
+        ]);
+
+        const searched = await request(app)
+          .get("/posts")
+          .query({ search: theme });
+        expect(searched.status).toBe(200);
+        expect(searched.body.total).toBe(2);
+        expect(searched.body.data.map((post) => post.theme)).toEqual([
+          theme,
+          theme,
+        ]);
+
+        const combined = await request(app)
+          .get("/posts")
+          .query({ theme, search: "Matching", page: 1, limit: 1 });
+        expect(combined.status).toBe(200);
+        expect(combined.body.total).toBe(1);
+        expect(combined.body.data).toEqual([
+          expect.objectContaining({ theme, title: "Matching article" }),
+        ]);
+      });
+
+      test.each(["Web development", "Web design", "Books"])(
+        "rejects filtering by %s",
+        async (theme) => {
+          const response = await request(app).get("/posts").query({ theme });
+          expect(response.status).toBe(400);
+        }
+      );
+
+      test("All still returns every category", async () => {
+        await Promise.all(
+          themes.map((theme) => createPost(user._id, { theme }))
+        );
+        const response = await request(app)
+          .get("/posts")
+          .query({ theme: "All" });
+        expect(response.status).toBe(200);
+        expect(response.body.total).toBe(4);
+      });
+    });
+
+    describe("Migration", () => {
+      test("renames every legacy post, preserves other fields, and is repeatable", async () => {
+        const legacyThemes = [
+          "Web development",
+          "Web development",
+          "Web design",
+        ];
+        // Insert raw records to represent data saved before the schema enum existed.
+        const originals = [...legacyThemes, ...themes].map((theme) =>
+          new Post({
+            ...data,
+            owner: user._id,
+            theme,
+            hashtags: ["node"],
+          }).toObject()
+        );
+        await Post.collection.insertMany(originals);
+        const before = await Post.collection
+          .find({})
+          .sort({ _id: 1 })
+          .toArray();
+
+        const preview = await migratePostThemes({ dryRun: true });
+        expect(preview.map((result) => result.matchedCount)).toEqual([2, 1]);
+        expect(
+          await Post.collection.find({}).sort({ _id: 1 }).toArray()
+        ).toEqual(before);
+
+        const results = await migratePostThemes();
+        expect(results.map((result) => result.modifiedCount)).toEqual([2, 1]);
+        const renames = {
+          "Web development": "Development",
+          "Web design": "Design",
+        };
+        expect(
+          await Post.collection.find({}).sort({ _id: 1 }).toArray()
+        ).toEqual(
+          before.map((post) => ({
+            ...post,
+            theme: renames[post.theme] || post.theme,
+          }))
+        );
+        const rerun = await migratePostThemes();
+        expect(rerun.map((result) => result.modifiedCount)).toEqual([0, 0]);
+      });
+    });
+  });
+
+  describe("External links", () => {
+    const postData = {
+      theme: "Development",
+      icon: "link",
+      title: "External article",
+      hashtags: "node express",
+      text: "Post text",
+    };
+    const updateData = {
+      newTheme: postData.theme,
+      newIcon: postData.icon,
+      newTitle: postData.title,
+      newHashtags: postData.hashtags,
+      newText: postData.text,
+    };
+    const link = "https://example.com/article";
+    const existingLink = {
+      externalLink: link,
+      externalLinkButtonText: "Read more",
+    };
+    const invalidFields = [
+      { externalLink: "not-a-url" },
+      { externalLink: "example.com/article" },
+      { externalLink: "javascript:alert(1)" },
+      { externalLink: "data:text/html,hello" },
+      { externalLink: "file:///etc/passwd" },
+      { externalLink: "ftp://example.com/file" },
+      { externalLink: null },
+      { externalLink: 123 },
+      { externalLink: link, externalLinkButtonText: "a".repeat(41) },
+      { externalLink: link, externalLinkButtonText: null },
+    ];
+
+    let user;
+    let cookie;
+
+    beforeEach(async () => {
+      user = await createUser();
+      cookie = await login();
+    });
+
+    // Check raw MongoDB data as well as responses so empty fields cannot be hidden
+    // by serialization while remaining in storage.
+    const expectLinkFields = (object, expected) => {
+      ["externalLink", "externalLinkButtonText"].forEach((field) => {
+        if (expected[field] === undefined) {
+          expect(object).not.toHaveProperty(field);
+        } else {
+          expect(object[field]).toBe(expected[field]);
+        }
+      });
+    };
+
+    describe("POST /posts", () => {
+      test.each([
+        ["without a link", {}, {}],
+        ["with only a link", { externalLink: link }, { externalLink: link }],
+        [
+          "with an HTTP link",
+          { externalLink: "http://example.com/article" },
+          { externalLink: "http://example.com/article" },
+        ],
+        [
+          "with a local URL following existing project validation",
+          { externalLink: "http://localhost/article" },
+          { externalLink: "http://localhost/article" },
+        ],
+        [
+          "with a private IP following existing project validation",
+          { externalLink: "http://192.168.1.1/article" },
+          { externalLink: "http://192.168.1.1/article" },
+        ],
+        ["with custom text", existingLink, existingLink],
+        [
+          "with trimmed custom text",
+          { externalLink: link, externalLinkButtonText: "  Read more  " },
+          existingLink,
+        ],
+        [
+          "with 40 character custom text",
+          { externalLink: link, externalLinkButtonText: "a".repeat(40) },
+          { externalLink: link, externalLinkButtonText: "a".repeat(40) },
+        ],
+        [
+          "with one character custom text",
+          { externalLink: link, externalLinkButtonText: "a" },
+          { externalLink: link, externalLinkButtonText: "a" },
+        ],
+        [
+          "with empty fields",
+          { externalLink: "", externalLinkButtonText: "" },
+          {},
+        ],
+        [
+          "with orphaned custom text",
+          { externalLinkButtonText: "Read more" },
+          {},
+        ],
+        [
+          "with blank custom text",
+          { externalLink: link, externalLinkButtonText: "   " },
+          { externalLink: link },
+        ],
+      ])("creates a post %s", async (_name, fields, expected) => {
+        const response = await request(app)
+          .post("/posts")
+          .set("Cookie", cookie)
+          .send({ ...postData, ...fields });
+
+        expect(response.status).toBe(201);
+        expectLinkFields(response.body, expected);
+        const saved = await Post.collection.findOne({ owner: user._id });
+        expectLinkFields(saved, expected);
+      });
+
+      test.each(invalidFields)(
+        "returns 400 for invalid fields %j",
+        async (fields) => {
+          const response = await request(app)
+            .post("/posts")
+            .set("Cookie", cookie)
+            .send({ ...postData, ...fields });
+
+          expect(response.status).toBe(400);
+          expect(await Post.countDocuments()).toBe(0);
+        }
+      );
+    });
+
+    describe("PATCH /posts/:id", () => {
+      test.each([
+        [
+          "adds a link and custom text",
+          {},
+          { newExternalLink: link, newExternalLinkButtonText: "Read more" },
+          existingLink,
+        ],
+        [
+          "adds a link without custom text",
+          {},
+          { newExternalLink: link },
+          { externalLink: link },
+        ],
+        [
+          "changes the link and custom text",
+          existingLink,
+          {
+            newExternalLink: "http://example.org/new-article",
+            newExternalLinkButtonText: "  Open article  ",
+          },
+          {
+            externalLink: "http://example.org/new-article",
+            externalLinkButtonText: "Open article",
+          },
+        ],
+        ["clears the link and text", existingLink, { newExternalLink: "" }, {}],
+        [
+          "discards custom text when clearing the link",
+          existingLink,
+          { newExternalLink: "", newExternalLinkButtonText: "Orphaned text" },
+          {},
+        ],
+        [
+          "clears only the custom text",
+          existingLink,
+          { newExternalLinkButtonText: "" },
+          { externalLink: link },
+        ],
+        [
+          "clears whitespace-only custom text",
+          existingLink,
+          { newExternalLinkButtonText: "   " },
+          { externalLink: link },
+        ],
+        [
+          "changes only the custom text",
+          existingLink,
+          { newExternalLinkButtonText: "New label" },
+          { externalLink: link, externalLinkButtonText: "New label" },
+        ],
+        [
+          "preserves text when changing only the link",
+          existingLink,
+          { newExternalLink: "https://example.org/new" },
+          {
+            externalLink: "https://example.org/new",
+            externalLinkButtonText: "Read more",
+          },
+        ],
+        ["preserves omitted fields", existingLink, {}, existingLink],
+        [
+          "discards text without a link",
+          {},
+          { newExternalLinkButtonText: "Orphaned text" },
+          {},
+        ],
+      ])("%s", async (_name, initial, fields, expected) => {
+        const post = await createPost(user._id, initial);
+        const response = await request(app)
+          .patch(`/posts/${post._id}`)
+          .set("Cookie", cookie)
+          .send({ ...updateData, ...fields });
+
+        expect(response.status).toBe(200);
+        expectLinkFields(response.body, expected);
+        const saved = await Post.collection.findOne({ _id: post._id });
+        expectLinkFields(saved, expected);
+      });
+
+      test.each(invalidFields)(
+        "returns 400 for invalid fields %j",
+        async (fields) => {
+          const post = await createPost(user._id, existingLink);
+          const updateFields = Object.fromEntries(
+            Object.entries(fields).map(([key, value]) => [
+              `new${key[0].toUpperCase()}${key.slice(1)}`,
+              value,
+            ])
+          );
+          const response = await request(app)
+            .patch(`/posts/${post._id}`)
+            .set("Cookie", cookie)
+            .send({ ...updateData, ...updateFields });
+
+          expect(response.status).toBe(400);
+          const saved = await Post.collection.findOne({ _id: post._id });
+          expectLinkFields(saved, existingLink);
+        }
+      );
+    });
+
+    describe("GET /posts and /posts/:id", () => {
+      test.each([
+        ["legacy posts without link fields", {}],
+        ["posts with a link and custom text", existingLink],
+        ["posts with a link and default client text", { externalLink: link }],
+      ])("returns %s", async (_name, fields) => {
+        const post = await createPost(user._id, fields);
+        const [single, list] = await Promise.all([
+          request(app).get(`/posts/${post._id}`),
+          request(app).get("/posts"),
+        ]);
+
+        expect(single.status).toBe(200);
+        expect(list.status).toBe(200);
+        expect(single.body._id).toBe(post._id.toString());
+        expect(list.body.data).toHaveLength(1);
+        expectLinkFields(single.body, fields);
+        expectLinkFields(list.body.data[0], fields);
+      });
+    });
+  });
+
+  describe("Model validation", () => {
+    const makePost = (fields = {}) =>
+      new Post({
+        owner: new mongoose.Types.ObjectId(),
+        theme: "Development",
+        icon: "link",
+        title: "External article",
+        text: "Post text",
+        ...fields,
+      });
+
+    describe("Categories", () => {
+      test.each(["Development", "Design", "Travel", "Daily life"])(
+        "accepts %s when bypassing the API",
+        async (theme) => {
+          await expect(makePost({ theme }).validate()).resolves.toBeUndefined();
+        }
+      );
+
+      test.each([
+        "Web development",
+        "Web design",
+        "Books",
+        "Backend",
+        "",
+        null,
+      ])("rejects %s when bypassing the API", async (theme) => {
+        await expect(makePost({ theme }).validate()).rejects.toThrow("theme");
+      });
+    });
+
+    describe("External links", () => {
+      test.each([
+        "javascript:alert(1)",
+        "data:text/html,hello",
+        "file:///etc/passwd",
+        "not a url",
+      ])(
+        "rejects invalid externalLink %s when bypassing the API",
+        async (url) => {
+          const post = makePost({ externalLink: url });
+
+          await expect(post.validate()).rejects.toThrow("externalLink");
+        }
+      );
+
+      test("enforces the same 40 character text limit as the API", async () => {
+        const post = makePost({
+          externalLink: "https://example.com/",
+          externalLinkButtonText: "a".repeat(41),
+        });
+
+        await expect(post.validate()).rejects.toThrow("externalLinkButtonText");
+      });
+
+      test.each([undefined, null, ""])(
+        "removes orphaned text when externalLink is %s",
+        async (externalLink) => {
+          const post = makePost({
+            externalLink,
+            externalLinkButtonText: "Read more",
+          });
+          await post.validate();
+
+          expect(post.toObject()).not.toHaveProperty("externalLink");
+          expect(post.toObject()).not.toHaveProperty("externalLinkButtonText");
+        }
+      );
+
+      test.each([undefined, null, "", "   "])(
+        "removes empty custom text %s while preserving the link",
+        async (externalLinkButtonText) => {
+          const post = makePost({
+            externalLink: "https://example.com/",
+            externalLinkButtonText,
+          });
+          await post.validate();
+
+          expect(post.externalLink).toBe("https://example.com/");
+          expect(post.toObject()).not.toHaveProperty("externalLinkButtonText");
+        }
+      );
     });
   });
 });

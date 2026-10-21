@@ -36,7 +36,7 @@ describe("Permissions", () => {
 
       const post = await Post.create({
         owner: owner._id,
-        theme: "Backend",
+        theme: "Development",
         icon: "💻",
         title: "Old title",
         photoLink: "https://example.com/photo.jpg",
@@ -50,7 +50,7 @@ describe("Permissions", () => {
         .patch(`/posts/${post._id}`)
         .set("Cookie", cookie)
         .send({
-          newTheme: "Frontend",
+          newTheme: "Design",
           newIcon: "🎨",
           newTitle: "New title",
           newHashtags: "react",
@@ -62,7 +62,7 @@ describe("Permissions", () => {
 
       const saved = await Post.findById(post._id);
 
-      expect(saved.theme).toBe("Backend");
+      expect(saved.theme).toBe("Development");
       expect(saved.icon).toBe("💻");
       expect(saved.title).toBe("Old title");
       expect(saved.hashtags).toEqual(["node"]);
@@ -76,7 +76,7 @@ describe("Permissions", () => {
 
       const post = await Post.create({
         owner: owner._id,
-        theme: "Backend",
+        theme: "Development",
         icon: "💻",
         title: "Post",
         hashtags: ["node"],

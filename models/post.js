@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const isUrl = require("validator/lib/isURL");
-const { IMAGE_BAD_URL_ERROR_MSG } = require("../utils/constants");
+const { IMAGE_BAD_URL_ERROR_MSG, POST_THEMES } = require("../utils/constants");
 
 const postSchema = new mongoose.Schema({
   owner: {
@@ -11,6 +11,7 @@ const postSchema = new mongoose.Schema({
   theme: {
     type: String,
     required: true,
+    enum: POST_THEMES,
   },
   icon: {
     type: String,

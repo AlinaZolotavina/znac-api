@@ -8,9 +8,6 @@ node_modules
 .env
 .env.docker
 
-# Scripts directory
-scripts/*
-
 # Keep upload directory structure, ignore uploaded content
 uploads/*
 !uploads/gallery/

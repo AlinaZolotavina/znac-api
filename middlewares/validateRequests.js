@@ -1,6 +1,6 @@
 const { celebrate, Joi } = require("celebrate");
 const isUrl = require("validator/lib/isURL");
-const { BAD_URL_ERROR_MSG } = require("../utils/constants");
+const { BAD_URL_ERROR_MSG, POST_THEMES } = require("../utils/constants");
 
 const validateUrl = (url, helpers) => {
   const options =
@@ -98,9 +98,19 @@ const validatePostRequest = celebrate({
   }),
 });
 
+const validatePostsQuery = celebrate({
+  query: Joi.object({
+    theme: Joi.string()
+      .valid(...POST_THEMES, "All")
+      .allow(""),
+  }).unknown(true),
+});
+
 const validateAddPost = celebrate({
   body: Joi.object({
-    theme: Joi.string().required(),
+    theme: Joi.string()
+      .valid(...POST_THEMES)
+      .required(),
     icon: Joi.string().required(),
     title: Joi.string().min(2).max(70).required(),
     photoLink: Joi.string().custom(validateUrl),
@@ -114,7 +124,9 @@ const validateAddPost = celebrate({
 
 const validateUpdatePost = celebrate({
   body: Joi.object({
-    newTheme: Joi.string().required(),
+    newTheme: Joi.string()
+      .valid(...POST_THEMES)
+      .required(),
     newIcon: Joi.string().required(),
     newTitle: Joi.string().min(2).max(70).required(),
     newPhotoLink: Joi.string().custom(validateUrl),
@@ -203,6 +215,7 @@ module.exports = {
   validateAddPhoto,
   validatePhotoHashtags,
   validatePostRequest,
+  validatePostsQuery,
   validateAddPost,
   validateUpdatePost,
   validateProjectRequest,

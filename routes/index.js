@@ -33,6 +33,7 @@ const createThumbnails = require("../middlewares/createThumbnails");
 const {
   validatePhotoRequest,
   validatePostRequest,
+  validatePostsQuery,
   validateSearch,
   validateContactMessage,
   validateHeroSlot,
@@ -74,7 +75,7 @@ router.put(
 
 router.get("/hashtags", publicReadRateLimiter, getHashtags);
 
-router.get("/posts", publicReadRateLimiter, getPosts);
+router.get("/posts", publicReadRateLimiter, validatePostsQuery, getPosts);
 router.get(
   "/posts/:postId",
   publicReadRateLimiter,

@@ -6,6 +6,7 @@
     "lint": "npx eslint",
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "migrate:post-themes": "node scripts/migratePostThemes.js",
     "test": "jest --runInBand",
     "test:watch": "jest --watch"
   },
